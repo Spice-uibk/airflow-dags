@@ -13,7 +13,7 @@ default_args = {
 }
 
 # MinIO configuration
-MINIO_ENDPOINT = "minio.minio.svc.cluster.local:9000"
+MINIO_ENDPOINT = "minio.stefan-dev.svc.cluster.local:9000"
 MINIO_ACCESS_KEY = "minioadmin"
 MINIO_SECRET_KEY = "minioadmin"
 CHROM_NR = "22"
