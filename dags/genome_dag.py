@@ -1,6 +1,5 @@
 from airflow import DAG
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
-from kubernetes.client import models as k8s
 from datetime import datetime, timedelta
 
 default_args = {
@@ -25,13 +24,13 @@ KEY_INPUT_SIFTING = "ALL.chr22.phase3_shapeit2_mvncall_integrated_v5.20130502.si
 DEBUG = "true"
 
 
-# Environment variables for all pods
-minio_env_vars = [
-    k8s.V1EnvVar(name="MINIO_ENDPOINT", value=MINIO_ENDPOINT),
-    k8s.V1EnvVar(name="MINIO_ACCESS_KEY", value=MINIO_ACCESS_KEY),
-    k8s.V1EnvVar(name="MINIO_SECRET_KEY", value=MINIO_SECRET_KEY),
-    k8s.V1EnvVar(name="MINIO_SECURE", value="false"),  # set to true for HTTPS
-]
+# Use a standard dictionary instead of k8s.V1EnvVar objects to save import time
+minio_env_dict = {
+    "MINIO_ENDPOINT": MINIO_ENDPOINT,
+    "MINIO_ACCESS_KEY": MINIO_ACCESS_KEY,
+    "MINIO_SECRET_KEY": MINIO_SECRET_KEY,
+    "MINIO_SECURE": "false"
+}
 
 with DAG(
     dag_id='genome_data_processing',
@@ -63,7 +62,7 @@ with DAG(
                 "--bucket_name", MINIO_BUCKET,
                 "--debug", DEBUG
             ],
-            env_vars=minio_env_vars,
+            env_vars=minio_env_dict,
             get_logs=True,
             is_delete_operator_pod=True,
             image_pull_policy="IfNotPresent"
@@ -84,7 +83,7 @@ with DAG(
             "--bucket_name", MINIO_BUCKET,
             "--debug", DEBUG
         ],
-        env_vars=minio_env_vars,
+        env_vars=minio_env_dict,
         get_logs=True,
         is_delete_operator_pod=True,
         image_pull_policy="IfNotPresent"
@@ -103,7 +102,7 @@ with DAG(
             "--bucket_name", MINIO_BUCKET,
             "--debug", DEBUG
         ],
-        env_vars=minio_env_vars,
+        env_vars=minio_env_dict,
         get_logs=True,
         is_delete_operator_pod=True,
         image_pull_policy="IfNotPresent"
@@ -127,7 +126,7 @@ with DAG(
                 "--bucket_name", MINIO_BUCKET,
                 "--debug", DEBUG
             ],
-            env_vars=minio_env_vars,
+            env_vars=minio_env_dict,
             get_logs=True,
             is_delete_operator_pod=True,
             image_pull_policy="IfNotPresent"
@@ -150,7 +149,7 @@ with DAG(
                 "--bucket_name", MINIO_BUCKET,
                 "--debug", DEBUG
             ],
-            env_vars=minio_env_vars,
+            env_vars=minio_env_dict,
             get_logs=True,
             is_delete_operator_pod=True,
             image_pull_policy="IfNotPresent"
