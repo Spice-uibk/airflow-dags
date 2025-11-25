@@ -18,6 +18,8 @@ MINIO_SECRET_KEY = "minioadmin"
 MINIO_BUCKET = "credit-card-fraud-data"
 MINIO_SECURE = "false"  # set to true for HTTPS
 
+NAMESPACE = "stefan-dev"
+
 # Base environment variables
 minio_env_dict = {
     "MINIO_ENDPOINT": MINIO_ENDPOINT,
@@ -38,7 +40,7 @@ with DAG(
     preprocessing_task = KubernetesPodOperator(
         task_id="data_preprocessing",
         name="data-preprocessing-pod",
-        namespace="default",
+        namespace=NAMESPACE,
         image="kogsi/credit_dag:preprocessing",
         arguments=["--file_name", "creditcard.csv"],
         env_vars=minio_env_dict,
@@ -50,7 +52,7 @@ with DAG(
     visualization_task = KubernetesPodOperator(
         task_id="data_visualization",
         name="data-visualization-pod",
-        namespace="default",
+        namespace=NAMESPACE,
         image="kogsi/credit_dag:visualization",
         arguments=["--file_name", "creditcard.csv"],
         env_vars=minio_env_dict,
@@ -65,7 +67,7 @@ with DAG(
         training_task = KubernetesPodOperator(
             task_id=f"model_training_{model}",
             name=f"model-training-{model}",
-            namespace="default",
+            namespace=NAMESPACE,
             image="kogsi/credit_dag:training",
             arguments=["--model_type", model],
             env_vars=minio_env_dict,
@@ -82,7 +84,7 @@ with DAG(
         evaluation_task = KubernetesPodOperator(
             task_id=f"model_evaluation_{model}",
             name=f"model-evaluation-{model}",
-            namespace="default",
+            namespace=NAMESPACE,
             image="kogsi/credit_dag:evaluation",
             arguments=["--model_type", model],
             env_vars=minio_env_dict,
@@ -97,7 +99,7 @@ with DAG(
     aggregation_task = KubernetesPodOperator(
         task_id="results_aggregation",
         name="results-aggregation",
-        namespace="default",
+        namespace=NAMESPACE,
         image="kogsi/credit_dag:aggregation",
         arguments=["--models", ",".join(models)],  # join into a single string
         env_vars=minio_env_dict,
@@ -110,7 +112,7 @@ with DAG(
     export_model_task = KubernetesPodOperator(
         task_id="export_model",
         name="export-model",
-        namespace="default",
+        namespace=NAMESPACE,
         image="kogsi/credit_dag:export_model",
         env_vars=minio_env_dict,
         is_delete_operator_pod=True,
@@ -121,9 +123,9 @@ with DAG(
     test_pkl_task = KubernetesPodOperator(
         task_id="test_pkl",
         name="test-pkl-model",
-        namespace="default",
+        namespace=NAMESPACE,
         image="kogsi/credit_dag:test_pkl",
-        env_vars=minio_env_dict + {
+        env_vars={
             **minio_env_dict,
             "BEST_MODEL_TYPE": "{{ ti.xcom_pull(task_ids='results_aggregation')['best_model'] }}"
         },
@@ -135,7 +137,7 @@ with DAG(
     test_onnx_task = KubernetesPodOperator(
         task_id="test_onnx",
         name="test-onnx-model",
-        namespace="default",
+        namespace=NAMESPACE,
         image="kogsi/credit_dag:test_onnx",
         env_vars= {
             **minio_env_dict,

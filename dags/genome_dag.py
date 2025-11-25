@@ -23,6 +23,8 @@ KEY_INPUT_SIFTING = "ALL.chr22.phase3_shapeit2_mvncall_integrated_v5.20130502.si
 # to show more details of tasks
 DEBUG = "true"
 
+NAMESPACE = "stefan-dev"
+
 
 # Use a standard dictionary instead of k8s.V1EnvVar objects to save import time
 minio_env_dict = {
@@ -51,7 +53,7 @@ with DAG(
          task = KubernetesPodOperator(
             task_id=f"individual_{x}",
             name=f"individual-{x}",
-            namespace="stefan-dev", 
+            namespace=NAMESPACE,
             image="kogsi/genome_dag:individual", 
             cmds=["python3", "individual.py"],
             arguments=[
@@ -75,7 +77,7 @@ with DAG(
      sifting_task = KubernetesPodOperator(
         task_id="sifting",
         name="sifting",
-        namespace="stefan-dev", 
+        namespace=NAMESPACE,
         image="kogsi/genome_dag:sifting", 
         cmds=["python3", "sifting.py"],
         arguments=[
@@ -95,7 +97,7 @@ with DAG(
      individuals_merge_task = KubernetesPodOperator(
         task_id="individuals_merge",
         name="individuals-merge",
-        namespace="stefan-dev", 
+        namespace=NAMESPACE,
         image="kogsi/genome_dag:individuals-merge",  
         cmds=["python3", "individuals-merge.py"],
         arguments=[
@@ -120,7 +122,7 @@ with DAG(
         task = KubernetesPodOperator(
             task_id=f"mutations_overlap_{pop}",
             name=f"mutations-overlap-{pop.lower()}",
-            namespace="stefan-dev",
+            namespace=NAMESPACE,
             image="kogsi/genome_dag:mutations-overlap", 
             cmds=["python3", "mutations-overlap.py"],
             arguments=[
@@ -144,7 +146,7 @@ with DAG(
         task = KubernetesPodOperator(
             task_id=f"frequency_{pop}",
             name=f"frequency-{pop.lower()}",
-            namespace="stefan-dev",
+            namespace=NAMESPACE,
             image="kogsi/genome_dag:frequency", 
             cmds=["python3", "frequency.py"],
             arguments=[

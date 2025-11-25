@@ -17,6 +17,8 @@ MINIO_BUCKET = "bank-subscription-prediction-data"
 MINIO_SECURE = "false"
 DATA_PATH = "https://archive.ics.uci.edu/ml/machine-learning-databases/00222/bank-additional.zip"
 
+NAMESPACE = "stefan-dev"
+
 # Base environment variables
 minio_env_dict = {
     "MINIO_ENDPOINT": MINIO_ENDPOINT,
@@ -37,7 +39,7 @@ with DAG(
     loading_task = KubernetesPodOperator(
         task_id="loading",
         name="loading",
-        namespace="default",
+        namespace=NAMESPACE,
         image="kogsi/bank_dag:loading",
         cmds=["python3", "loading.py"],
         arguments=["--data_path", DATA_PATH],
@@ -52,7 +54,7 @@ with DAG(
     cleaning_task = KubernetesPodOperator(
         task_id="cleaning",
         name="cleaning",
-        namespace="default",
+        namespace=NAMESPACE,
         image="kogsi/bank_dag:cleaning",
         cmds=["python3", "cleaning.py"],
         env_vars={
@@ -69,7 +71,7 @@ with DAG(
     preprocessing_task = KubernetesPodOperator(
         task_id="preprocessing",
         name="preprocessing",
-        namespace="default",
+        namespace=NAMESPACE,
         image="kogsi/bank_dag:preprocessing",
         cmds=["python3", "preprocessing.py"],
         env_vars={
@@ -86,7 +88,7 @@ with DAG(
     splitting_task = KubernetesPodOperator(
         task_id="splitting",
         name="splitting",
-        namespace="default",
+        namespace=NAMESPACE,
         image="kogsi/bank_dag:splitting",
         cmds=["python3", "splitting.py"],
         env_vars={
@@ -103,7 +105,7 @@ with DAG(
     training_task = KubernetesPodOperator(
         task_id="training",
         name="training",
-        namespace="default",
+        namespace=NAMESPACE,
         image="kogsi/bank_dag:training",
         cmds=["python3", "training.py"],
         env_vars={
@@ -121,7 +123,7 @@ with DAG(
     evaluation_task = KubernetesPodOperator(
         task_id="evaluation",
         name="evaluation",
-        namespace="default",
+        namespace=NAMESPACE,
         image="kogsi/bank_dag:evaluation",
         cmds=["python3", "evaluation.py"],
         env_vars={
