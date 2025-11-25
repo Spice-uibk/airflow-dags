@@ -65,7 +65,8 @@ with DAG(
             env_vars=minio_env_dict,
             get_logs=True,
             is_delete_operator_pod=True,
-            image_pull_policy="IfNotPresent"
+            image_pull_policy="IfNotPresent",
+            exec_timeout=timedelta(hours=1)
          )
          individual_tasks.append(task)
 
@@ -86,7 +87,8 @@ with DAG(
         env_vars=minio_env_dict,
         get_logs=True,
         is_delete_operator_pod=True,
-        image_pull_policy="IfNotPresent"
+        image_pull_policy="IfNotPresent",
+        exec_timeout=timedelta(hours=1)
      )
     
      # Individuals merge task
@@ -105,7 +107,8 @@ with DAG(
         env_vars=minio_env_dict,
         get_logs=True,
         is_delete_operator_pod=True,
-        image_pull_policy="IfNotPresent"
+        image_pull_policy="IfNotPresent",
+        exec_timeout=timedelta(hours=1)
      )
          
          
@@ -129,7 +132,8 @@ with DAG(
             env_vars=minio_env_dict,
             get_logs=True,
             is_delete_operator_pod=True,
-            image_pull_policy="IfNotPresent"
+            image_pull_policy="IfNotPresent",
+            exec_timeout=timedelta(hours=1)
         )
         mutations_overlap_tasks.append(task)
          
@@ -152,7 +156,8 @@ with DAG(
             env_vars=minio_env_dict,
             get_logs=True,
             is_delete_operator_pod=True,
-            image_pull_policy="IfNotPresent"
+            image_pull_policy="IfNotPresent",
+            exec_timeout=timedelta(hours=1)
         )
         frequency_tasks.append(task)
          
