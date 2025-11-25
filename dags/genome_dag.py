@@ -66,7 +66,7 @@ with DAG(
             get_logs=True,
             is_delete_operator_pod=True,
             image_pull_policy="IfNotPresent",
-            exec_timeout=timedelta(hours=1)
+            execution_timeout=timedelta(hours=1)
          )
          individual_tasks.append(task)
 
@@ -88,7 +88,7 @@ with DAG(
         get_logs=True,
         is_delete_operator_pod=True,
         image_pull_policy="IfNotPresent",
-        exec_timeout=timedelta(hours=1)
+        execution_timeout=timedelta(hours=1)
      )
     
      # Individuals merge task
@@ -108,7 +108,7 @@ with DAG(
         get_logs=True,
         is_delete_operator_pod=True,
         image_pull_policy="IfNotPresent",
-        exec_timeout=timedelta(hours=1)
+        execution_timeout=timedelta(hours=1)
      )
          
          
@@ -133,7 +133,7 @@ with DAG(
             get_logs=True,
             is_delete_operator_pod=True,
             image_pull_policy="IfNotPresent",
-            exec_timeout=timedelta(hours=1)
+            execution_timeout=timedelta(hours=1)
         )
         mutations_overlap_tasks.append(task)
          
@@ -157,7 +157,7 @@ with DAG(
             get_logs=True,
             is_delete_operator_pod=True,
             image_pull_policy="IfNotPresent",
-            exec_timeout=timedelta(hours=1)
+            execution_timeout=timedelta(hours=1)
         )
         frequency_tasks.append(task)
          
