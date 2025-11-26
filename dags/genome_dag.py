@@ -68,7 +68,8 @@ with DAG(
             get_logs=True,
             is_delete_operator_pod=True,
             image_pull_policy="IfNotPresent",
-            execution_timeout=timedelta(hours=1)
+            execution_timeout=timedelta(hours=1),
+            node_selector={"kubernetes.io/hostname": "node1"}, 
          )
          individual_tasks.append(task)
 
@@ -90,7 +91,8 @@ with DAG(
         get_logs=True,
         is_delete_operator_pod=True,
         image_pull_policy="IfNotPresent",
-        execution_timeout=timedelta(hours=1)
+        execution_timeout=timedelta(hours=1),
+        node_selector={"kubernetes.io/hostname": "node1"}, 
      )
     
      # Individuals merge task
@@ -110,7 +112,8 @@ with DAG(
         get_logs=True,
         is_delete_operator_pod=True,
         image_pull_policy="IfNotPresent",
-        execution_timeout=timedelta(hours=1)
+        execution_timeout=timedelta(hours=1),
+        node_selector={"kubernetes.io/hostname": "node1"}, 
      )
          
          
@@ -135,7 +138,8 @@ with DAG(
             get_logs=True,
             is_delete_operator_pod=True,
             image_pull_policy="IfNotPresent",
-            execution_timeout=timedelta(hours=1)
+            execution_timeout=timedelta(hours=1),
+            node_selector={"kubernetes.io/hostname": "node1"}, 
         )
         mutations_overlap_tasks.append(task)
          
@@ -159,7 +163,8 @@ with DAG(
             get_logs=True,
             is_delete_operator_pod=True,
             image_pull_policy="IfNotPresent",
-            execution_timeout=timedelta(hours=1)
+            execution_timeout=timedelta(hours=1),
+            node_selector={"kubernetes.io/hostname": "node1"}, 
         )
         frequency_tasks.append(task)
          
