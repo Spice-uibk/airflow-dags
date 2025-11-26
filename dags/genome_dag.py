@@ -47,8 +47,8 @@ with DAG(
     # Individual task
      individual_tasks = []
      for x in range(0, 5):  # maybe change constant and change step size accordingly
-         counter = x * 500 + 1
-         stop = (x + 1) * 500 + 1
+         counter = x * 2000 + 1
+         stop = (x + 1) * 2000 + 1
          
          task = KubernetesPodOperator(
             task_id=f"individual_{x}",
@@ -104,7 +104,7 @@ with DAG(
         cmds=["python3", "individuals-merge.py"],
         arguments=[
             "--chromNr", CHROM_NR,
-            "--keys", ','.join([f'chr22n-{x*500+1}-{(x+1)*500+1}.tar.gz' for x in range(5)]),  # take same step size and interation limit as in first loop
+            "--keys", ','.join([f'chr22n-{x*2000+1}-{(x+1)*2000+1}.tar.gz' for x in range(5)]),  # take same step size and interation limit as in first loop
             "--bucket_name", MINIO_BUCKET,
             "--debug", DEBUG
         ],
