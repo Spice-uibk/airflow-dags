@@ -20,9 +20,6 @@ MINIO_BUCKET = "genome-data"
 KEY_INPUT_INDIVIDUAL = "ALL.chr22.80000.vcf.gz"
 KEY_INPUT_SIFTING = "ALL.chr22.phase3_shapeit2_mvncall_integrated_v5.20130502.sites.annotation.vcf.gz"
 
-# to show more details of tasks
-DEBUG = "true"
-
 NAMESPACE = "stefan-dev"
 
 
@@ -61,8 +58,7 @@ with DAG(
                 "--counter", str(counter),
                 "--stop", str(stop),
                 "--chromNr", CHROM_NR,
-                "--bucket_name", MINIO_BUCKET,
-                "--debug", DEBUG
+                "--bucket_name", MINIO_BUCKET
             ],
             env_vars=minio_env_dict,
             get_logs=True,
@@ -84,8 +80,7 @@ with DAG(
         arguments=[
             "--key_datafile", KEY_INPUT_SIFTING,
             "--chromNr", CHROM_NR,
-            "--bucket_name", MINIO_BUCKET,
-            "--debug", DEBUG
+            "--bucket_name", MINIO_BUCKET
         ],
         env_vars=minio_env_dict,
         get_logs=True,
@@ -105,8 +100,7 @@ with DAG(
         arguments=[
             "--chromNr", CHROM_NR,
             "--keys", ','.join([f'chr22n-{x*2000+1}-{(x+1)*2000+1}.tar.gz' for x in range(5)]),  # take same step size and interation limit as in first loop
-            "--bucket_name", MINIO_BUCKET,
-            "--debug", DEBUG
+            "--bucket_name", MINIO_BUCKET
         ],
         env_vars=minio_env_dict,
         get_logs=True,
@@ -131,8 +125,7 @@ with DAG(
             arguments=[
                 "--chromNr", CHROM_NR,
                 "--POP", pop,
-                "--bucket_name", MINIO_BUCKET,
-                "--debug", DEBUG
+                "--bucket_name", MINIO_BUCKET
             ],
             env_vars=minio_env_dict,
             get_logs=True,
@@ -156,8 +149,7 @@ with DAG(
             arguments=[
                 "--chromNr", CHROM_NR,
                 "--POP", pop,
-                "--bucket_name", MINIO_BUCKET,
-                "--debug", DEBUG
+                "--bucket_name", MINIO_BUCKET
             ],
             env_vars=minio_env_dict,
             get_logs=True,
