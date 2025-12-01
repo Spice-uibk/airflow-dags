@@ -49,6 +49,7 @@ with DAG(
         image_pull_policy="Always",
         do_xcom_push=True,
         reattach_on_restart=True,
+        node_selector={"kubernetes.io/hostname": "node1"}, 
     )
 
     cleaning_task = KubernetesPodOperator(
@@ -66,6 +67,7 @@ with DAG(
         image_pull_policy="Always",
         do_xcom_push=True,
         reattach_on_restart=True,
+        node_selector={"kubernetes.io/hostname": "node1"}, 
     )
 
     preprocessing_task = KubernetesPodOperator(
@@ -83,6 +85,7 @@ with DAG(
         image_pull_policy="Always",
         do_xcom_push=True,
         reattach_on_restart=True,
+        node_selector={"kubernetes.io/hostname": "node1"}, 
     )
 
     splitting_task = KubernetesPodOperator(
@@ -100,6 +103,7 @@ with DAG(
         image_pull_policy="Always",
         do_xcom_push=True,
         reattach_on_restart=True,
+        node_selector={"kubernetes.io/hostname": "node1"}, 
     )
 
     training_task = KubernetesPodOperator(
@@ -118,6 +122,7 @@ with DAG(
         image_pull_policy="Always",
         do_xcom_push=True,
         reattach_on_restart=True,
+        node_selector={"kubernetes.io/hostname": "node1"}, 
     )
 
     evaluation_task = KubernetesPodOperator(
@@ -138,6 +143,7 @@ with DAG(
         image_pull_policy="Always",
         do_xcom_push=False,
         reattach_on_restart=True,
+        node_selector={"kubernetes.io/hostname": "node1"}, 
     )
 
     loading_task >> cleaning_task >> preprocessing_task >> splitting_task >> training_task >> evaluation_task
