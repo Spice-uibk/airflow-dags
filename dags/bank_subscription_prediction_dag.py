@@ -46,7 +46,7 @@ with DAG(
         env_vars=minio_env_dict, 
         get_logs=True,
         is_delete_operator_pod=True,
-        image_pull_policy="IfNotPresent",
+        image_pull_policy="Always",
         do_xcom_push=True,
         reattach_on_restart=True,
     )
@@ -63,7 +63,7 @@ with DAG(
         },
         get_logs=True,
         is_delete_operator_pod=True,
-        image_pull_policy="IfNotPresent",
+        image_pull_policy="Always",
         do_xcom_push=True,
         reattach_on_restart=True,
     )
@@ -80,7 +80,7 @@ with DAG(
         },
         get_logs=True,
         is_delete_operator_pod=True,
-        image_pull_policy="IfNotPresent",
+        image_pull_policy="Always",
         do_xcom_push=True,
         reattach_on_restart=True,
     )
@@ -97,7 +97,7 @@ with DAG(
         },
         get_logs=True,
         is_delete_operator_pod=True,
-        image_pull_policy="IfNotPresent",
+        image_pull_policy="Always",
         do_xcom_push=True,
         reattach_on_restart=True,
     )
@@ -115,7 +115,7 @@ with DAG(
         },
         get_logs=True,
         is_delete_operator_pod=True,
-        image_pull_policy="IfNotPresent",
+        image_pull_policy="Always",
         do_xcom_push=True,
         reattach_on_restart=True,
     )
@@ -135,7 +135,7 @@ with DAG(
         },
         get_logs=True,
         is_delete_operator_pod=True,
-        image_pull_policy="IfNotPresent",
+        image_pull_policy="Always",
         do_xcom_push=False,
         reattach_on_restart=True,
     )

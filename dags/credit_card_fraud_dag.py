@@ -46,7 +46,7 @@ with DAG(
         env_vars=minio_env_dict,
         is_delete_operator_pod=True,
         get_logs=True,
-        image_pull_policy="IfNotPresent",  
+        image_pull_policy="Always",  
     )
 
     visualization_task = KubernetesPodOperator(
@@ -58,7 +58,7 @@ with DAG(
         env_vars=minio_env_dict,
         is_delete_operator_pod=True,
         get_logs=True,
-        image_pull_policy="IfNotPresent", 
+        image_pull_policy="Always", 
     )
 
 
@@ -73,7 +73,7 @@ with DAG(
             env_vars=minio_env_dict,
             is_delete_operator_pod=True,
             get_logs=True,
-            image_pull_policy="IfNotPresent",  
+            image_pull_policy="Always",  
         )
 
         training_tasks.append(training_task)
@@ -90,7 +90,7 @@ with DAG(
             env_vars=minio_env_dict,
             is_delete_operator_pod=True,
             get_logs=True,
-            image_pull_policy="IfNotPresent", 
+            image_pull_policy="Always", 
         )
 
         evaluation_tasks.append(evaluation_task)
@@ -105,7 +105,7 @@ with DAG(
         env_vars=minio_env_dict,
         is_delete_operator_pod=True,
         get_logs=True,
-        image_pull_policy="IfNotPresent",  
+        image_pull_policy="Always",  
         do_xcom_push=True,
     )
 
@@ -117,7 +117,7 @@ with DAG(
         env_vars=minio_env_dict,
         is_delete_operator_pod=True,
         get_logs=True,
-        image_pull_policy="IfNotPresent",  
+        image_pull_policy="Always",  
     )
 
     test_pkl_task = KubernetesPodOperator(
@@ -131,7 +131,7 @@ with DAG(
         },
         is_delete_operator_pod=True,
         get_logs=True,
-        image_pull_policy="IfNotPresent",
+        image_pull_policy="Always",
     )
 
     test_onnx_task = KubernetesPodOperator(
@@ -145,7 +145,7 @@ with DAG(
         },
         is_delete_operator_pod=True,
         get_logs=True,
-        image_pull_policy="IfNotPresent", 
+        image_pull_policy="Always", 
     )
 
 
