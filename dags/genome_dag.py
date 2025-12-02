@@ -65,7 +65,7 @@ with DAG(
             is_delete_operator_pod=True,
             image_pull_policy="IfNotPresent",
             execution_timeout=timedelta(hours=1),
-            node_selector={"kubernetes.io/hostname": "node1"}, 
+            node_selector={"kubernetes.io/hostname": "node5"} if x == 0 or x == 1 else {"kubernetes.io/hostname": "node1"},
          )
          individual_tasks.append(task)
 
