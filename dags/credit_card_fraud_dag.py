@@ -75,7 +75,7 @@ with DAG(
             env_vars=minio_env_dict,
             is_delete_operator_pod=True,
             get_logs=True,
-            image_pull_policy="IfNotPresent", 
+            image_pull_policy="Always", 
             node_selector={"kubernetes.io/hostname": "node1"},  
         )
 
