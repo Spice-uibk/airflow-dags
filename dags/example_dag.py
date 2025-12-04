@@ -40,11 +40,13 @@ for i in range(10):
         image='python:3.9-slim',
         cmds=['/bin/sh', '-c'],
         arguments=[
-            f'python -c "import urllib.request; print(\'Pod {i} downloading...\'); '
-            f'sleep 30 && urllib.request.urlretrieve(\'{FILE_URL}\', \'/dev/null\'); '
-            f'print(\'Pod {i} Finished\')" '
-            '&& echo "Work done. Sleeping 30s for Prometheus..." '
-            '&& sleep 30'
+            f'python -c " '
+            f'import time, urllib.request; '
+            f'print(\'Pod {i} downloading...\'); '
+            f'time.sleep(30); '
+            f'urllib.request.urlretrieve(\'{FILE_URL}\', \'/dev/null\'); '
+            f'time.sleep(30); "'
+            f'"'
         ],
         in_cluster=True,
         dag=dag,
