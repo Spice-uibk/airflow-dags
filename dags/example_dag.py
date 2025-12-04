@@ -79,11 +79,7 @@ ram_hog = bytearray(200 * 1024 * 1024)
         arguments=[f'python -c "{flat_script}"'],
         in_cluster=True,
         dag=dag,
-        termination_grace_period=0,
-        container_resources=k8s.V1ResourceRequirements(
-            limits={"memory": "512Mi", "cpu": "1000m"},
-            requests={"memory": "256Mi", "cpu": "500m"}
-        )
+        termination_grace_period=0
     )
 
     start_task >> k8s_task >> end_task
