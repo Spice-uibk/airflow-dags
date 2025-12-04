@@ -35,11 +35,14 @@ FILE_URL = "https://file-examples.com/wp-content/storage/2017/10/file-example_PD
 for i in range(10):
 
     python_command = (
-        f"import time, urllib.request, sys; "
-        f"def download(): "
-        f" try: urllib.request.urlretrieve('{FILE_URL}', '/dev/null'); print('Pod {i} download succeeded') "
-        f" except Exception as e: print(f'Pod {i} download failed: {{e}}'); sys.exit(1); "
-        f"download(); time.sleep(30)"
+        f"import time, urllib.request, sys\n"
+        f"try:\n"
+        f"    urllib.request.urlretrieve('{FILE_URL}', '/dev/null')\n"
+        f"    print('Pod {i} download succeeded')\n"
+        f"except Exception as e:\n"
+        f"    print(f'Pod {i} download failed: {{e}}')\n"
+        f"    sys.exit(1)\n"
+        f"time.sleep(30)"
     )
 
     k8s_task = KubernetesPodOperator(
