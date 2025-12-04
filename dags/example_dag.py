@@ -35,10 +35,15 @@ FILE_URL = "https://file-examples.com/wp-content/storage/2017/10/file-example_PD
 for i in range(10):
 
     python_command = (
-        f"import time, urllib.request; "
+        f"import time, urllib.request, sys; "
         f"print('Pod {i} downloading...'); "
         f"time.sleep(30); "
-        f"urllib.request.urlretrieve('{FILE_URL}', '/dev/null'); "
+        f"try: "
+        f"    urllib.request.urlretrieve('{FILE_URL}', '/dev/null'); "
+        f"    print('Pod {i} download succeeded'); "
+        f"except Exception as e: "
+        f"    print(f'Pod {i} download failed: {{e}}'); "
+        f"    sys.exit(1); "
         f"time.sleep(30);"
     )
 
