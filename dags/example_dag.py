@@ -33,21 +33,22 @@ end_task = EmptyOperator(
 
 FILE_URL = "https://file-examples.com/wp-content/storage/2017/10/file-example_PDF_1MB.pdf"
 for i in range(10):
+
+    python_command = (
+        f"import time, urllib.request; "
+        f"print('Pod {i} downloading...'); "
+        f"time.sleep(30); "
+        f"urllib.request.urlretrieve('{FILE_URL}', '/dev/null'); "
+        f"time.sleep(30);"
+    )
+
     k8s_task = KubernetesPodOperator(
         task_id=f'k8s_download_{i}',
         name=f'download-pod-{i}',
         namespace='stefan-dev',
         image='python:3.9-slim',
         cmds=['/bin/sh', '-c'],
-        arguments=[
-            f'python -c " '
-            f'import time, urllib.request; '
-            f'print(\'Pod {i} downloading...\'); '
-            f'time.sleep(30); '
-            f'urllib.request.urlretrieve(\'{FILE_URL}\', \'/dev/null\'); '
-            f'time.sleep(30); "'
-            f'"'
-        ],
+        arguments=[f'python -c "{python_command}"'],
         in_cluster=True,
         dag=dag,
         termination_grace_period=0,
