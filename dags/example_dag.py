@@ -36,15 +36,10 @@ for i in range(10):
 
     python_command = (
         f"import time, urllib.request, sys; "
-        f"print('Pod {i} downloading...'); "
-        f"time.sleep(30); "
-        f"try: "
-        f"    urllib.request.urlretrieve('{FILE_URL}', '/dev/null'); "
-        f"    print('Pod {i} download succeeded'); "
-        f"except Exception as e: "
-        f"    print(f'Pod {i} download failed: {{e}}'); "
-        f"    sys.exit(1); "
-        f"time.sleep(30);"
+        f"def download(): "
+        f" try: urllib.request.urlretrieve('{FILE_URL}', '/dev/null'); print('Pod {i} download succeeded') "
+        f" except Exception as e: print(f'Pod {i} download failed: {{e}}'); sys.exit(1); "
+        f"download(); time.sleep(30)"
     )
 
     k8s_task = KubernetesPodOperator(
