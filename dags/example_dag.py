@@ -36,7 +36,7 @@ for i in range(10):
 
     python_command = (
         f"import time, urllib.request, sys\n"
-        f"time.sleep(30)"
+        f"time.sleep(30)\n"
         f"try:\n"
         f"    urllib.request.urlretrieve('{FILE_URL}', '/dev/null')\n"
         f"    print('Pod {i} download succeeded')\n"
