@@ -41,7 +41,7 @@ for i in range(10):
         cmds=['/bin/sh', '-c'],
         arguments=[
             f'python -c "import urllib.request; print(\'Pod {i} downloading...\'); '
-            f'urllib.request.urlretrieve(\'{FILE_URL}\', \'/dev/null\'); '
+            f'sleep 30 && urllib.request.urlretrieve(\'{FILE_URL}\', \'/dev/null\'); '
             f'print(\'Pod {i} Finished\')" '
             '&& echo "Work done. Sleeping 30s for Prometheus..." '
             '&& sleep 30'
