@@ -66,6 +66,7 @@ with DAG(
             image_pull_policy="IfNotPresent",
             execution_timeout=timedelta(hours=1),
             node_selector={"kubernetes.io/hostname": "node1"},
+            on_finish_action="keep_pod"
          )
          individual_tasks.append(task)
 
