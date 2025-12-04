@@ -1,3 +1,4 @@
+import base64
 from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
@@ -13,73 +14,76 @@ default_args = {
 }
 
 dag = DAG(
-    'example_download_dag',
+    'stress_test_metrics',
     default_args=default_args,
-    description='Runs 10 parallel pods',
+    description='Validates download and runs CPU/Memory stress test',
     schedule='@once',
     catchup=False,
-    tags=['network_test', 'k8s', 'parallel'],
+    tags=['stress_test', 'k8s'],
 )
 
-start_task = EmptyOperator(
-    task_id='start',
-    dag=dag,
-)
+start_task = EmptyOperator(task_id='start', dag=dag)
+end_task = EmptyOperator(task_id='end', dag=dag)
 
-end_task = EmptyOperator(
-    task_id='end',
-    dag=dag,
-)
+FILE_URL = "https://freetestdata.com/wp-content/uploads/2021/09/Free_Test_Data_2MB_PDF.pdf"
 
-FILE_URL = "https://file-examples.com/wp-content/storage/2017/10/file-example_PDF_1MB.pdf"
 for i in range(10):
-    # 1. Define the Python script logic
-    # We use Triple Quotes (""") to write multi-line python easily.
-    # We use {FILE_URL} inside the f-string.
-    python_script = f"""
+    python_source_code = f"""
 import time
 import urllib.request
 import os
+import sys
 
 # --- PART 1: Download & Validate ---
-print('Pod {i}: Starting Download...')
-dest_file = '/tmp/downloaded_file.pdf'
-urllib.request.urlretrieve('{FILE_URL}', dest_file)
+print("Pod {i}: Starting Download...")
+dest_file = "/tmp/downloaded_file.pdf"
 
-# Validation: Check if file exists and has size > 0
+try:
+    urllib.request.urlretrieve("{FILE_URL}", dest_file)
+except Exception as e:
+    print(f"Pod {i}: Download failed: {{e}}")
+    sys.exit(1)
+
 if os.path.exists(dest_file):
     size_mb = os.path.getsize(dest_file) / (1024 * 1024)
-    print(f'Pod {i}: SUCCESS. File downloaded. Size: {{size_mb:.2f}} MB')
+    print(f"Pod {i}: SUCCESS. File size: {{size_mb:.2f}} MB")
+    if size_mb < 0.1:
+        print("Pod {i}: FAILURE. File too small.")
+        sys.exit(1)
 else:
-    print(f'Pod {i}: FAILURE. File not found.')
-    exit(1) # Fail the pod if download missed
+    print("Pod {i}: FAILURE. File not found.")
+    sys.exit(1)
 
 # --- PART 2: CPU Stress (5 Seconds) ---
-print('Pod {i}: Spiking CPU for 5 seconds...')
+print("Pod {i}: Spiking CPU (100%) for 5 seconds...")
 start_time = time.time()
-# A tight loop consumes 100% of a single core
 while time.time() - start_time < 5:
     _ = 12345 * 67890 
 
-# --- PART 3: Memory Stress (High Usage) ---
-# We allocate 200MB of data. 
-# NOTE: Ensure your Pod Resource Limit is > 200MB or this will OOMKill!
-print('Pod {i}: Spiking Memory (200MB)...')
-# Create a byte array of 200MB (200 * 1024 * 1024)
-ram_hog = bytearray(200 * 1024 * 1024) 
+# --- PART 3: Memory Stress (Alloc & Hold) ---
+print("Pod {i}: Spiking Memory (200MB)...")
+# Allocate 200MB
+ram_hog = bytearray(200 * 1024 * 1024)
+
+# We must sleep while holding the variable so cAdvisor sees it.
+# If we exit immediately, memory is freed before Prometheus scrapes.
+print("Pod {i}: Holding memory and sleeping 30s for Prometheus scrape...")
+time.sleep(30)
+
+print("Pod {i}: Done.")
 """
 
-    flat_script = python_script.replace('\n', '; ')
+    script_b64 = base64.b64encode(python_source_code.encode('utf-8')).decode('utf-8')
     k8s_task = KubernetesPodOperator(
-        task_id=f'k8s_stress_test_{i}',
+        task_id=f'k8s_stress_{i}',
         name=f'stress-pod-{i}',
         namespace='stefan-dev',
         image='python:3.9-slim',
         cmds=['/bin/sh', '-c'],
-        arguments=[f'python -c "{flat_script}"'],
+        arguments=[f'echo {script_b64} | base64 -d | python'],
         in_cluster=True,
         dag=dag,
-        termination_grace_period=0
+        termination_grace_period=0,
     )
 
     start_task >> k8s_task >> end_task
