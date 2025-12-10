@@ -3,8 +3,7 @@ from airflow import DAG
 from airflow.decorators import task
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
 from airflow.operators.empty import EmptyOperator
-from airflow.models import Variable
-import json # Needed for the python script inside the pod
+import json
 
 default_args = {
     'owner': 'stefanpedratscher',
@@ -14,62 +13,110 @@ default_args = {
 }
 
 dag = DAG(
-    'hello_world_kubernetes_xcom',
+    'chained_parallelism_k8s',
     default_args=default_args,
-    description='Dynamic K8s with XCom collection',
+    description='Flow: 1 -> 4 Pods -> Transform -> 3 Pods -> Summary',
     schedule='@once',
     start_date=datetime(2023, 1, 1),
     catchup=False,
-    tags=['hello_world', 'k8s'],
+    tags=['k8s', 'parallelism'],
 )
 
 with dag:
     start_task = EmptyOperator(task_id='start')
 
+    # ---------------------------------------------------------
+    # STEP 1: Generate Initial Workload (4 Items)
+    # ---------------------------------------------------------
     @task
-    def get_input_list():
-        # Returns 2 items -> 2 Parallel Pods
-        return [[1, 2], [3, 4]]
+    def get_initial_input():
+        print("Generating list for 4 parallel tasks...")
+        return ["Data_A", "Data_B", "Data_C", "Data_D"]
 
-    input_data = get_input_list()
+    list_of_4 = get_initial_input()
 
-    # We need a Python script that prints to stdout AND writes to the XCom file
-    # This weird string formatting creates a valid Python script to run inside the pod
-    def generate_python_cmd(x):
-        msg = f"Hello from data {x}!"
-        # 1. Print it (so it shows in logs)
-        # 2. Dump it to /airflow/xcom/return.json (so Airflow collects it)
-        return [f'import json; msg="{msg}"; print(msg); open("/airflow/xcom/return.json", "w").write(json.dumps(msg))']
+    # Helper to generate Python script for Pods
+    # It prints to logs AND writes to XCom JSON file
+    def generate_cmd(data_input):
+        script = (
+            f'import json; '
+            f'result = "Processed {data_input}"; '
+            f'print(result); '
+            f'open("/airflow/xcom/return.json", "w").write(json.dumps(result))'
+        )
+        return [script]
 
-    k8s_hello_task = KubernetesPodOperator.partial(
-        task_id='k8s_hello',
-        name='hello-pod',
+    # ---------------------------------------------------------
+    # STEP 2: First Fan-Out (4 Parallel Pods)
+    # ---------------------------------------------------------
+    stage_1_pods = KubernetesPodOperator.partial(
+        task_id='stage_1_processing',
+        name='pod-stage-1',
         namespace='stefan-dev',
         image='python:3.9-slim',
         cmds=['python', '-c'],
         in_cluster=True,
-        # CRITICAL: This enables the sidecar to read /airflow/xcom/return.json
-        do_xcom_push=True,
+        do_xcom_push=True, # Critical for collecting results
     ).expand(
-        arguments=input_data.map(generate_python_cmd)
+        arguments=list_of_4.map(generate_cmd)
     )
 
-    # 3. Fan-In: Receive the results
-    # Airflow automatically gathers the parallel outputs into a single list
+    # ---------------------------------------------------------
+    # STEP 3: Transform (Reduce 4 -> Map 3)
+    # ---------------------------------------------------------
+    # This task acts as a barrier. It waits for the 4 pods to finish,
+    # receives their output, and generates a NEW list of 3 items.
     @task
-    def final_summary(collected_results):
+    def transform_4_to_3(previous_results):
+        print(f"Stage 1 finished. Received {len(previous_results)} outputs: {previous_results}")
+
+        # Example Logic: Create 3 new batches based on the previous 4 results
+        # In a real scenario, you might aggregate data here.
+        new_workload = [
+            f"Batch_1 (from {len(previous_results)} inputs)",
+            f"Batch_2 (Analysis)",
+            f"Batch_3 (Cleanup)"
+        ]
+        return new_workload
+
+    list_of_3 = transform_4_to_3(stage_1_pods.output)
+
+    # ---------------------------------------------------------
+    # STEP 4: Second Fan-Out (3 Parallel Pods)
+    # ---------------------------------------------------------
+    stage_2_pods = KubernetesPodOperator.partial(
+        task_id='stage_2_processing',
+        name='pod-stage-2',
+        namespace='stefan-dev',
+        image='python:3.9-slim',
+        cmds=['python', '-c'],
+        in_cluster=True,
+        do_xcom_push=True,
+    ).expand(
+        arguments=list_of_3.map(generate_cmd)
+    )
+
+    # ---------------------------------------------------------
+    # STEP 5: Final Summary (Fan-In)
+    # ---------------------------------------------------------
+    @task
+    def final_output(final_results):
         print("-----------------------------------------")
-        print(f"Received {len(collected_results)} results from parallel pods:")
-        for res in collected_results:
+        print("WORKFLOW COMPLETE")
+        print(f"Final Stage produced {len(final_results)} items:")
+        for res in final_results:
             print(f" - {res}")
         print("-----------------------------------------")
 
-        # You can now process the combined data here
-        return "Summary Complete"
-
-    # Pass the output of the KPO task (.output) to the summary task
-    summary_task = final_summary(k8s_hello_task.output)
+    end_summary = final_output(stage_2_pods.output)
 
     end_task = EmptyOperator(task_id='end')
 
-    start_task >> input_data >> k8s_hello_task >> summary_task >> end_task
+    # ---------------------------------------------------------
+    # Dependencies
+    # ---------------------------------------------------------
+    # The dependencies are implicit in the data flow (.output),
+    # but we chain the start/end markers explicitly.
+    start_task >> list_of_4
+    # The middle is handled by data passing (XComs)
+    end_summary >> end_task
