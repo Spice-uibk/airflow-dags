@@ -3,6 +3,7 @@ from airflow import DAG
 from airflow.decorators import task
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
 from airflow.operators.empty import EmptyOperator
+from airflow.models import Variable
 
 default_args = {
     'owner': 'stefanpedratscher',
@@ -28,7 +29,8 @@ with dag:
 
     @task
     def get_input_list():
-        return ["Instance 1", "Instance 2", "Instance 3"]
+        count = int(Variable.get("kpo_parallelism_count", default_var=4))
+        return [f"Instance {i}" for i in range(count)]
 
     input_data = get_input_list()
 
