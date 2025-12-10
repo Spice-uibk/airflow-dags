@@ -3,6 +3,7 @@ from airflow import DAG
 from airflow.decorators import task
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
 from airflow.operators.empty import EmptyOperator
+from airflow.utils.trigger_rule import TriggerRule
 import json
 
 default_args = {
@@ -13,13 +14,13 @@ default_args = {
 }
 
 dag = DAG(
-    'chained_parallelism_k8s',
+    'chained_branching_k8s',
     default_args=default_args,
-    description='Flow: 1 -> 4 Pods -> Transform -> 3 Pods -> Summary',
+    description='Flow: 4 Pods -> Branch -> 2 Pods (Stage 2) -> Summary',
     schedule='@once',
     start_date=datetime(2023, 1, 1),
     catchup=False,
-    tags=['k8s', 'parallelism'],
+    tags=['k8s', 'branching'],
 )
 
 with dag:
@@ -30,14 +31,12 @@ with dag:
     # ---------------------------------------------------------
     @task
     def get_initial_input():
-        print("Generating list for 4 parallel tasks...")
         return ["Data_A", "Data_B", "Data_C", "Data_D"]
 
     list_of_4 = get_initial_input()
 
-    # Helper to generate Python script for Pods
-    # It prints to logs AND writes to XCom JSON file
     def generate_cmd(data_input):
+        # Python script to run inside the pod
         script = (
             f'import json; '
             f'result = "Processed {data_input}"; '
@@ -47,7 +46,7 @@ with dag:
         return [script]
 
     # ---------------------------------------------------------
-    # STEP 2: First Fan-Out (4 Parallel Pods)
+    # STEP 2: Stage 1 (4 Parallel Pods)
     # ---------------------------------------------------------
     stage_1_pods = KubernetesPodOperator.partial(
         task_id='stage_1_processing',
@@ -56,34 +55,40 @@ with dag:
         image='python:3.9-slim',
         cmds=['python', '-c'],
         in_cluster=True,
-        do_xcom_push=True, # Critical for collecting results
+        do_xcom_push=True,
     ).expand(
         arguments=list_of_4.map(generate_cmd)
     )
 
     # ---------------------------------------------------------
-    # STEP 3: Transform (Reduce 4 -> Map 3)
+    # STEP 3: Branching Logic
     # ---------------------------------------------------------
-    # This task acts as a barrier. It waits for the 4 pods to finish,
-    # receives their output, and generates a NEW list of 3 items.
-    @task
-    def transform_4_to_3(previous_results):
-        print(f"Stage 1 finished. Received {len(previous_results)} outputs: {previous_results}")
+    # This task analyzes the 4 results from Stage 1.
+    # It decides whether to proceed to Stage 2 or skip to end.
+    @task.branch
+    def check_results_and_branch(results):
+        print(f"Analyzing {len(results)} results from Stage 1...")
 
-        # Example Logic: Create 3 new batches based on the previous 4 results
-        # In a real scenario, you might aggregate data here.
-        new_workload = [
-            f"Batch_1 (from {len(previous_results)} inputs)",
-            f"Batch_2 (Analysis)",
-            f"Batch_3 (Cleanup)"
-        ]
-        return new_workload
+        # LOGIC: If we have 4 results, proceed. Otherwise skip.
+        if len(results) == 4:
+            return "prepare_stage_2" # Task ID of the next step
+        else:
+            return "skip_stage_2"    # Task ID of the skip step
 
-    list_of_3 = transform_4_to_3(stage_1_pods.output)
+    branch_decision = check_results_and_branch(stage_1_pods.output)
 
     # ---------------------------------------------------------
-    # STEP 4: Second Fan-Out (3 Parallel Pods)
+    # PATH A: Prepare Stage 2 (The Success Path)
     # ---------------------------------------------------------
+    @task(task_id="prepare_stage_2")
+    def transform_data():
+        # Requirement: Parallelism degree of 2 for Stage 2
+        print("Branch chosen: Proceeding to Stage 2 with 2 parallel tasks.")
+        return ["Stage2_Task_1", "Stage2_Task_2"]
+
+    list_of_2 = transform_data()
+
+    # Stage 2 (2 Parallel Pods)
     stage_2_pods = KubernetesPodOperator.partial(
         task_id='stage_2_processing',
         name='pod-stage-2',
@@ -93,30 +98,49 @@ with dag:
         in_cluster=True,
         do_xcom_push=True,
     ).expand(
-        arguments=list_of_3.map(generate_cmd)
+        arguments=list_of_2.map(generate_cmd)
     )
 
     # ---------------------------------------------------------
-    # STEP 5: Final Summary (Fan-In)
+    # PATH B: Skip Path
     # ---------------------------------------------------------
-    @task
-    def final_output(final_results):
+    skip_dummy = EmptyOperator(task_id="skip_stage_2")
+
+    # ---------------------------------------------------------
+    # STEP 4: Final Summary (Join)
+    # ---------------------------------------------------------
+    # CRITICAL: trigger_rule='none_failed_min_one_success' or 'all_done'
+    # works best for joining branches. Since we are using XComs, we handle
+    # the case where stage_2_pods might be skipped (None).
+    @task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
+    def final_output(final_results=None):
         print("-----------------------------------------")
-        print("WORKFLOW COMPLETE")
-        print(f"Final Stage produced {len(final_results)} items:")
-        for res in final_results:
-            print(f" - {res}")
+        if final_results:
+            print(f"Workflow Finished via Stage 2. Results: {final_results}")
+        else:
+            print("Workflow Finished via Skip path. No Stage 2 results.")
         print("-----------------------------------------")
 
-    end_summary = final_output(stage_2_pods.output)
+    # Connect the join task.
+    # Note: If branch goes to 'skip', stage_2_pods will be skipped,
+    # and final_output will receive None or be skipped depending on trigger rule.
+    summary = final_output(stage_2_pods.output)
 
     end_task = EmptyOperator(task_id='end')
 
     # ---------------------------------------------------------
-    # Dependencies
+    # Dependency Chain
     # ---------------------------------------------------------
-    # The dependencies are implicit in the data flow (.output),
-    # but we chain the start/end markers explicitly.
-    start_task >> list_of_4
-    # The middle is handled by data passing (XComs)
-    end_summary >> end_task
+
+    # 1. Start -> List -> Stage 1 -> Branch
+    start_task >> list_of_4 >> stage_1_pods >> branch_decision
+
+    # 2. Define the Branch Options
+    branch_decision >> list_of_2 >> stage_2_pods # Path A
+    branch_decision >> skip_dummy                # Path B
+
+    # 3. Join back to Summary
+    stage_2_pods >> summary
+    skip_dummy >> summary
+
+    summary >> end_task
