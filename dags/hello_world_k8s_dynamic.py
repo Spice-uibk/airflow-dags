@@ -30,9 +30,10 @@ with dag:
 
     @task
     def get_input_list():
-        time.sleep(30)
-        count = int(Variable.get("kpo_parallelism_count", default_var=4))
-        return [f"Instance {i}" for i in range(count)]
+        #time.sleep(30)
+        #count = int(Variable.get("kpo_parallelism_count", default_var=4))
+        #return [f"Instance {i}" for i in range(count)]
+        return [[1,2],[3,4]]
 
     input_data = get_input_list()
 
