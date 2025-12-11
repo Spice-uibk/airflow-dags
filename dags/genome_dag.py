@@ -1,6 +1,7 @@
 from airflow import DAG
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
 from datetime import datetime, timedelta
+from airflow.models import Variable
 
 default_args = {
     "owner": 'user',
@@ -40,12 +41,15 @@ with DAG(
     tags=['genome', 'kubernetes', 'minio'],
     max_active_tasks=16,
 ) as dag:
+
+
+    LOOP_LIMIT = int(Variable.get("genome_individuals_parallelism_count", default_var=5))
     
     # Individual task
      individual_tasks = []
-     for x in range(0, 5):  # maybe change constant and change step size accordingly
-         counter = x * 2000 + 1
-         stop = (x + 1) * 2000 + 1
+     for x in range(LOOP_LIMIT):
+         counter = x * 5000 + 1
+         stop = (x + 1) * 5000 + 1
          
          task = KubernetesPodOperator(
             task_id=f"individual_{x}",
@@ -99,7 +103,7 @@ with DAG(
         cmds=["python3", "individuals-merge.py"],
         arguments=[
             "--chromNr", CHROM_NR,
-            "--keys", ','.join([f'chr22n-{x*2000+1}-{(x+1)*2000+1}.tar.gz' for x in range(5)]),  # take same step size and interation limit as in first loop
+            "--keys", ','.join([f'chr22n-{x*5000+1}-{(x+1)*5000+1}.tar.gz' for x in range(LOOP_LIMIT)]),  # take same step size and interation limit as in first loop
             "--bucket_name", MINIO_BUCKET
         ],
         env_vars=minio_env_dict,
