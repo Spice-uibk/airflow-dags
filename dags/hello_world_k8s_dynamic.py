@@ -1,50 +1,57 @@
 from datetime import datetime, timedelta
 from airflow import DAG
-from airflow.decorators import task
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
-from airflow.operators.empty import EmptyOperator
-from airflow.models import Variable
-import time
+import json
 
 default_args = {
     'owner': 'stefanpedratscher',
     'depends_on_past': False,
-    'email_on_failure': False,
-    'email_on_retry': False,
     'retries': 1,
     'retry_delay': timedelta(minutes=1),
 }
 
 dag = DAG(
-    'hello_world_kubernetes_dynamic',
+    'kpo_only_dynamic_mapping',
     default_args=default_args,
-    description='A simple Hello World DAG using Kubernetes operator',
+    description='Dynamic mapping using ONLY KubernetesPodOperators',
     schedule='@once',
     start_date=datetime(2023, 1, 1),
     catchup=False,
-    tags=['hello_world', 'k8s'],
+    tags=['k8s', 'xcom'],
 )
 
 with dag:
-    start_task = EmptyOperator(task_id='start')
+    generator_cmd = """
+import json
+import os
+count = int(os.environ.get("COUNT", 4))
+data = [f"Instance {i}" for i in range(count)]
+print(f"Generating list: {data}")
+with open('/airflow/xcom/return.json', 'w') as f:
+    json.dump(data, f)
+    """
 
-    @task
-    def get_input_list():
-        time.sleep(30)
-        count = int(Variable.get("kpo_parallelism_count", default_var=4))
-        return [f"Instance {i}" for i in range(count)]
+    generator_pod = KubernetesPodOperator(
+        task_id='generate_list_pod',
+        name='generator-pod',
+        namespace='stefan-dev',
+        image='python:3.9-slim',
+        env_vars={'COUNT': '{{ var.value.get("kpo_parallelism_count", 4) }}'},
+        cmds=['python', '-c', generator_cmd],
+        in_cluster=True,
+        do_xcom_push=True,
+        node_selector={"kubernetes.io/hostname": "node1"},
+    )
 
-    input_data = get_input_list()
-
-    k8s_hello_task = KubernetesPodOperator.partial(
+    consumer_pods = KubernetesPodOperator.partial(
         task_id='k8s_hello',
         name='hello-pod',
         namespace='stefan-dev',
         image='python:3.9-slim',
         cmds=['python', '-c'],
         in_cluster=True,
+        node_selector={"kubernetes.io/hostname": "node1"},
     ).expand(
-        arguments=input_data.map(lambda x: [f'print("Hello from {x}!")'])
+        arguments=generator_pod.output.map(lambda x: [f'print("Hello from {x}!")'])
     )
-    end_task = EmptyOperator(task_id='end')
-    start_task >> input_data >> k8s_hello_task >> end_task
+    generator_pod >> consumer_pods
