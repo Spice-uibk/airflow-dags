@@ -24,6 +24,8 @@ with dag:
     generator_cmd = """
 import json
 import os
+import time
+time.sleep(20)
 count = int(os.environ.get("COUNT", 4))
 data = [f"Instance {i}" for i in range(count)]
 print(f"Generating list: {data}")
@@ -52,6 +54,8 @@ with open('/airflow/xcom/return.json', 'w') as f:
         in_cluster=True,
         node_selector={"kubernetes.io/hostname": "node1"},
     ).expand(
-        arguments=generator_pod.output.map(lambda x: [f'print("Hello from {x}!")'])
+        arguments=generator_pod.output.map(
+            lambda x: [f'import time; print("Sleeping..."); time.sleep(20); print("Hello from {x}!")']
+        )
     )
     generator_pod >> consumer_pods
