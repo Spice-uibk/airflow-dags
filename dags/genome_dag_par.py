@@ -119,29 +119,29 @@ with DAG(
     )
 
     # Mutations Overlap task
-    mutations_overlap_tasks = []
+    # mutations_overlap_tasks = []
     pop_arr = ["EUR", "AFR", "EAS", "ALL", "GBR", "SAS", "AMR"]
 
-    for pop in pop_arr:
-        task = KubernetesPodOperator(
-            task_id=f"mutations_overlap_{pop}",
-            name=f"mutations-overlap-{pop.lower()}",
-            namespace=NAMESPACE,
-            image="kogsi/genome_dag:mutations-overlap",
-            cmds=["python3", "mutations-overlap.py"],
-            arguments=[
-                "--chromNr", CHROM_NR,
-                "--POP", pop,
-                "--bucket_name", MINIO_BUCKET
-            ],
-            env_vars=minio_env_vars,
-            get_logs=True,
-            is_delete_operator_pod=True,
-            image_pull_policy="IfNotPresent",
-            execution_timeout=timedelta(hours=1),
-            node_selector={"kubernetes.io/hostname": "node1"},
-        )
-        mutations_overlap_tasks.append(task)
+    # for pop in pop_arr:
+    #     task = KubernetesPodOperator(
+    #         task_id=f"mutations_overlap_{pop}",
+    #         name=f"mutations-overlap-{pop.lower()}",
+    #         namespace=NAMESPACE,
+    #         image="kogsi/genome_dag:mutations-overlap",
+    #         cmds=["python3", "mutations-overlap.py"],
+    #         arguments=[
+    #             "--chromNr", CHROM_NR,
+    #             "--POP", pop,
+    #             "--bucket_name", MINIO_BUCKET
+    #         ],
+    #         env_vars=minio_env_vars,
+    #         get_logs=True,
+    #         is_delete_operator_pod=True,
+    #         image_pull_policy="IfNotPresent",
+    #         execution_timeout=timedelta(hours=1),
+    #         node_selector={"kubernetes.io/hostname": "node1"},
+    #     )
+    #     mutations_overlap_tasks.append(task)
 
     # Frequency tasks
     for pop in pop_arr:
@@ -244,5 +244,5 @@ with DAG(
             sifting_task >> task
     # Task dependencies
     individual_tasks >> individuals_merge_task
-    individuals_merge_task >> mutations_overlap_tasks
-    sifting_task >> mutations_overlap_tasks
+    # individuals_merge_task >> mutations_overlap_tasks
+    # sifting_task >> mutations_overlap_tasks
