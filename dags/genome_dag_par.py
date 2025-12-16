@@ -145,71 +145,19 @@ with DAG(
 
     # Frequency tasks
     for pop in pop_arr:
-        # Calculate overlaps and uploads results to MinIO
-        freq_calc = KubernetesPodOperator(
-            task_id=f"frequency_calc_{pop}",
-            name=f"frequency-calc-{pop}",
-            namespace=NAMESPACE,
-            image="kogsi/genome_dag:frequency_par",
-            cmds=["python3", "frequency_par.py"],
-            arguments=[
-                "--mode", "calc",
-                "--chromNr", CHROM_NR,
-                "--POP", pop,
-                "--bucket_name", MINIO_BUCKET
-            ],
-            env_vars=minio_env_vars,
-            get_logs=True,
-            is_delete_operator_pod=True,
-            image_pull_policy="IfNotPresent",
-            execution_timeout=timedelta(hours=1),
-            node_selector={"kubernetes.io/hostname": "node1"},
-        )
-
-        # Merges partial results, uploads one tar.gz
-        freq_merge = KubernetesPodOperator(
-            task_id=f"frequency_merge_{pop}",
-            name=f"frequency-merge-{pop}",
-            namespace=NAMESPACE,
-            image="kogsi/genome_dag:frequency_par",
-            cmds=["python3", "frequency_par.py"],
-            arguments=[
-                "--mode", "merge",
-                "--chromNr", CHROM_NR,
-                "--POP", pop,
-                "--bucket_name", MINIO_BUCKET,
-                "--chunks", str(FREQ_PARALLELISM)
-            ],
-            env_vars=minio_env_vars,
-            get_logs=True,
-            is_delete_operator_pod=True,
-            image_pull_policy="IfNotPresent",
-            execution_timeout=timedelta(hours=1),
-            node_selector={"kubernetes.io/hostname": "node1"},
-        )
-
-        individuals_merge_task >> freq_calc
-        sifting_task >> freq_calc
-
-        # Parallel Plotting
-        for i in range(FREQ_PARALLELISM):
-            start_idx = i * FREQ_CHUNK_SIZE
-            end_idx = (i + 1) * FREQ_CHUNK_SIZE if i < FREQ_PARALLELISM else FREQ_TOTAL_PLOTS
-
-            freq_plot = KubernetesPodOperator(
-                task_id=f"frequency_plot_{pop}_{i}",
-                name=f"frequency-plot-{pop}-{i}",
+        if pop in ["ALL"]:
+            # Calculate overlaps and uploads results to MinIO
+            freq_calc = KubernetesPodOperator(
+                task_id=f"frequency_calc_{pop}",
+                name=f"frequency-calc-{pop}",
                 namespace=NAMESPACE,
                 image="kogsi/genome_dag:frequency_par",
                 cmds=["python3", "frequency_par.py"],
                 arguments=[
-                    "--mode", "plot",
+                    "--mode", "calc",
                     "--chromNr", CHROM_NR,
                     "--POP", pop,
-                    "--bucket_name", MINIO_BUCKET,
-                    "--start", str(start_idx),
-                    "--end", str(end_idx),
-                    "--chunk_id", str(i),
+                    "--bucket_name", MINIO_BUCKET
                 ],
                 env_vars=minio_env_vars,
                 get_logs=True,
@@ -219,8 +167,81 @@ with DAG(
                 node_selector={"kubernetes.io/hostname": "node1"},
             )
 
-            freq_calc >> freq_plot >> freq_merge
+            # Merges partial results, uploads one tar.gz
+            freq_merge = KubernetesPodOperator(
+                task_id=f"frequency_merge_{pop}",
+                name=f"frequency-merge-{pop}",
+                namespace=NAMESPACE,
+                image="kogsi/genome_dag:frequency_par",
+                cmds=["python3", "frequency_par.py"],
+                arguments=[
+                    "--mode", "merge",
+                    "--chromNr", CHROM_NR,
+                    "--POP", pop,
+                    "--bucket_name", MINIO_BUCKET,
+                    "--chunks", str(FREQ_PARALLELISM)
+                ],
+                env_vars=minio_env_vars,
+                get_logs=True,
+                is_delete_operator_pod=True,
+                image_pull_policy="IfNotPresent",
+                execution_timeout=timedelta(hours=1),
+                node_selector={"kubernetes.io/hostname": "node1"},
+            )
 
+            individuals_merge_task >> freq_calc
+            sifting_task >> freq_calc
+
+            # Parallel Plotting
+            for i in range(FREQ_PARALLELISM):
+                start_idx = i * FREQ_CHUNK_SIZE
+                end_idx = (i + 1) * FREQ_CHUNK_SIZE if i < FREQ_PARALLELISM else FREQ_TOTAL_PLOTS
+
+                freq_plot = KubernetesPodOperator(
+                    task_id=f"frequency_plot_{pop}_{i}",
+                    name=f"frequency-plot-{pop}-{i}",
+                    namespace=NAMESPACE,
+                    image="kogsi/genome_dag:frequency_par",
+                    cmds=["python3", "frequency_par.py"],
+                    arguments=[
+                        "--mode", "plot",
+                        "--chromNr", CHROM_NR,
+                        "--POP", pop,
+                        "--bucket_name", MINIO_BUCKET,
+                        "--start", str(start_idx),
+                        "--end", str(end_idx),
+                        "--chunk_id", str(i),
+                    ],
+                    env_vars=minio_env_vars,
+                    get_logs=True,
+                    is_delete_operator_pod=True,
+                    image_pull_policy="IfNotPresent",
+                    execution_timeout=timedelta(hours=1),
+                    node_selector={"kubernetes.io/hostname": "node1"},
+                )
+
+                freq_calc >> freq_plot >> freq_merge
+        else:
+            task = KubernetesPodOperator(
+                task_id=f"frequency_{pop}",
+                name=f"frequency-{pop.lower()}",
+                namespace=NAMESPACE,
+                image="kogsi/genome_dag:frequency",
+                cmds=["python3", "frequency.py"],
+                arguments=[
+                    "--chromNr", CHROM_NR,
+                    "--POP", pop,
+                    "--bucket_name", MINIO_BUCKET
+                ],
+                env_vars=minio_env_vars,
+                get_logs=True,
+                is_delete_operator_pod=False,
+                image_pull_policy="IfNotPresent",
+                execution_timeout=timedelta(hours=1),
+                node_selector={"kubernetes.io/hostname": "node1"},
+            )
+            individuals_merge_task >> task
+            sifting_task >> task
     # Task dependencies
     individual_tasks >> individuals_merge_task
     individuals_merge_task >> mutations_overlap_tasks
