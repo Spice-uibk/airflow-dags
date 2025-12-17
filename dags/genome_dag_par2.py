@@ -47,12 +47,13 @@ with DAG(
 ) as dag:
 
     LOOP_LIMIT = int(Variable.get("genome_individuals_parallelism_count", default_var=5))
+    CHUNK_SIZE = int(Variable.get("genome_individuals_chunk_size", default_var=2000))
 
     # Individual task
     individual_tasks = []
     for x in range(LOOP_LIMIT):
-        counter = x * 2000 + 1
-        stop = (x + 1) * 2000 + 1
+        counter = x * CHUNK_SIZE + 1
+        stop = (x + 1) * CHUNK_SIZE + 1
 
         task = KubernetesPodOperator(
             task_id=f"individual_{x}",
@@ -105,7 +106,7 @@ with DAG(
         cmds=["python3", "individuals-merge.py"],
         arguments=[
             "--chromNr", CHROM_NR,
-            "--keys", ','.join([f'chr22n-{x * 2000 + 1}-{(x + 1) * 2000 + 1}.tar.gz' for x in range(LOOP_LIMIT)]),
+            "--keys", ','.join([f'chr22n-{x * CHUNK_SIZE + 1}-{(x + 1) * CHUNK_SIZE + 1}.tar.gz' for x in range(LOOP_LIMIT)]),
             "--bucket_name", MINIO_BUCKET
         ],
         env_vars=minio_env_vars,

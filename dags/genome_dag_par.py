@@ -10,7 +10,6 @@ default_args = {
     "start_date": datetime(2025, 1, 1),
     "retries": 1,
     "retry_delay": timedelta(minutes=5),
-    "depends_on_past": False,
 }
 
 # MinIO configuration
@@ -48,12 +47,13 @@ with DAG(
 ) as dag:
 
     LOOP_LIMIT = int(Variable.get("genome_individuals_parallelism_count", default_var=5))
+    CHUNK_SIZE = int(Variable.get("genome_individuals_chunk_size", default_var=2000))
 
     # Individual task
     individual_tasks = []
     for x in range(LOOP_LIMIT):  # maybe change constant and change step size accordingly
-        counter = x * 16000 + 1
-        stop = (x + 1) * 16000 + 1
+        counter = x * CHUNK_SIZE + 1
+        stop = (x + 1) * CHUNK_SIZE + 1
 
         task = KubernetesPodOperator(
             task_id=f"individual_{x}",
@@ -107,7 +107,7 @@ with DAG(
         cmds=["python3", "individuals-merge.py"],
         arguments=[
             "--chromNr", CHROM_NR,
-            "--keys", ','.join([f'chr22n-{x * 16000 + 1}-{(x + 1) * 16000 + 1}.tar.gz' for x in range(LOOP_LIMIT)]),  # take same step size and interation limit as in first loop
+            "--keys", ','.join([f'chr22n-{x * CHUNK_SIZE + 1}-{(x + 1) * CHUNK_SIZE + 1}.tar.gz' for x in range(LOOP_LIMIT)]),  # take same step size and interation limit as in first loop
             "--bucket_name", MINIO_BUCKET
         ],
         env_vars=minio_env_vars,
