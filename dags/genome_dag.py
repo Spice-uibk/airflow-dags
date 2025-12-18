@@ -37,7 +37,7 @@ minio_env_vars = [
 ]
 
 with DAG(
-        dag_id='genome_data_processing_par2',
+        dag_id='genome_data_processing',
         default_args=default_args,
         description='Genome processing pipeline using KubernetesPodOperator',
         schedule=None,
