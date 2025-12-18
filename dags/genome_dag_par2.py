@@ -1,3 +1,5 @@
+from os import WCONTINUED
+
 from airflow import DAG
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
 from kubernetes.client import models as k8s
@@ -54,6 +56,8 @@ with DAG(
     FREQUENCY_GBR_WORKERS = int(Variable.get("genome_frequency_gbr_workers", default_var=1))
     FREQUENCY_SAS_WORKERS = int(Variable.get("genome_frequency_sas_workers", default_var=1))
     FREQUENCY_AMR_WORKERS = int(Variable.get("genome_frequency_amr_workers", default_var=1))
+
+    SKIP_MUTATIONS_OVERLAP = Variable.get("genome_skip_mutations_overlap", default_var="true")
 
     pop_dict = {
         "EUR": FREQUENCY_EUR_WORKERS,
@@ -134,29 +138,32 @@ with DAG(
         node_selector={"kubernetes.io/hostname": "node1"},
     )
 
-    # # Mutations Overlap task
-    # mutations_overlap_tasks = []
-    #
-    # for pop in pop_dict.keys():
-    #     task = KubernetesPodOperator(
-    #         task_id=f"mutations_overlap_{pop}",
-    #         name=f"mutations-overlap-{pop.lower()}",
-    #         namespace=NAMESPACE,
-    #         image="kogsi/genome_dag:mutations-overlap",
-    #         cmds=["python3", "mutations-overlap.py"],
-    #         arguments=[
-    #             "--chromNr", CHROM_NR,
-    #             "--POP", pop,
-    #             "--bucket_name", MINIO_BUCKET
-    #         ],
-    #         env_vars=minio_env_vars,
-    #         get_logs=True,
-    #         is_delete_operator_pod=True,
-    #         image_pull_policy="IfNotPresent",
-    #         execution_timeout=timedelta(hours=1),
-    #         node_selector={"kubernetes.io/hostname": "node1"},
-    #     )
-    #     mutations_overlap_tasks.append(task)
+    # Mutations Overlap task
+    if SKIP_MUTATIONS_OVERLAP == "true":
+        pass
+    else:
+        mutations_overlap_tasks = []
+
+        for pop in pop_dict.keys():
+            task = KubernetesPodOperator(
+                task_id=f"mutations_overlap_{pop}",
+                name=f"mutations-overlap-{pop.lower()}",
+                namespace=NAMESPACE,
+                image="kogsi/genome_dag:mutations-overlap",
+                cmds=["python3", "mutations-overlap.py"],
+                arguments=[
+                    "--chromNr", CHROM_NR,
+                    "--POP", pop,
+                    "--bucket_name", MINIO_BUCKET
+                ],
+                env_vars=minio_env_vars,
+                get_logs=True,
+                is_delete_operator_pod=True,
+                image_pull_policy="IfNotPresent",
+                execution_timeout=timedelta(hours=1),
+                node_selector={"kubernetes.io/hostname": "node1"},
+            )
+            mutations_overlap_tasks.append(task)
 
 
     for pop, num_workers in pop_dict.items():
@@ -241,5 +248,9 @@ with DAG(
 
 
     individual_tasks >> individuals_merge_task
-    # individuals_merge_task >> mutations_overlap_tasks
-    # sifting_task >> mutations_overlap_tasks
+
+    if SKIP_MUTATIONS_OVERLAP == "true":
+        pass
+    else:
+        individuals_merge_task >> mutations_overlap_tasks
+        sifting_task >> mutations_overlap_tasks
