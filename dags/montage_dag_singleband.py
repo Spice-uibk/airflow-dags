@@ -231,7 +231,8 @@ with DAG(
                                           shard_idx, final_output, cleanup_targets)],
             get_logs=True,
             volumes=[k8s.V1Volume(name="scratch", empty_dir=k8s.V1EmptyDirVolumeSource())],
-            volume_mounts=[k8s.V1VolumeMount(name="scratch", mount_path="/work")]
+            volume_mounts=[k8s.V1VolumeMount(name="scratch", mount_path="/work")],
+            node_selector={"kubernetes.io/hostname": "node1"},
         )
 
 
@@ -247,7 +248,8 @@ with DAG(
             f"mc alias set myminio http://$MINIO_ENDPOINT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY && "
             f"mc rm --recursive --force myminio/{MINIO_BUCKET}/{REMOTE_TMP}/ || true"
         ],
-        get_logs=True
+        get_logs=True,
+        node_selector={"kubernetes.io/hostname": "node1"},
     )
 
     m_hdr = task_builder("mHdr", cmd=f"mHdr 'NGC 3372' {SIZE} region.hdr")
