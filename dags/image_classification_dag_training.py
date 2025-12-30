@@ -201,7 +201,7 @@ with DAG(
             "--bucket_name", MINIO_BUCKET,
             "--validation_split", "0.2",
             # "--validation_data_path", "inference/validation_data",
-            "--epochs", "10",
+            "--epochs", "5",
             "--batch_size", "32",
             "--early_stop_patience", "5",
             "--dropout_rate", "0.2",
