@@ -1,6 +1,7 @@
 from airflow import DAG
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
 from datetime import datetime, timedelta
+from airflow.models import Variable
 
 default_args = {
     "owner": 'user',
@@ -33,12 +34,12 @@ with DAG(
     start_date=datetime(2025, 1, 1),
 ) as dag:
 
-    NUM_OFFSET_TASKS = 1
-    NUM_CROP_TASKS = 1
-    NUM_ENHANCE_BRIGHTNESS_TASKS = 1
-    NUM_ENHANCE_CONTRAST_TASKS = 1
-    NUM_ROTATE_TASKS = 1
-    NUM_GRAYSCALE_TASKS = 1
+    NUM_OFFSET_TASKS = int(Variable.get("image_classification_inference_offset", default_var=1))
+    NUM_CROP_TASKS = int(Variable.get("image_classification_inference_crop", default_var=1))
+    NUM_ENHANCE_BRIGHTNESS_TASKS = int(Variable.get("image_classification_inference_enhance_brightness", default_var=1))
+    NUM_ENHANCE_CONTRAST_TASKS = int(Variable.get("image_classification_inference_enhance_contrast", default_var=1))
+    NUM_ROTATE_TASKS = int(Variable.get("image_classification_inference_rotate", default_var=1))
+    NUM_GRAYSCALE_TASKS = int(Variable.get("image_classification_inference_grayscale", default_var=1))
 
     offset_tasks = []
     for i in range(NUM_OFFSET_TASKS):
