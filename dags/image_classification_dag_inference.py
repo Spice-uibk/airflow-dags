@@ -61,6 +61,7 @@ with DAG(
             get_logs=True,
             is_delete_operator_pod=True,
             image_pull_policy="IfNotPresent",
+            node_selector={"kubernetes.io/hostname": "node1"},
         )
         offset_tasks.append(offset_task)
 
@@ -88,6 +89,7 @@ with DAG(
             get_logs=True,
             is_delete_operator_pod=True,
             image_pull_policy="IfNotPresent",
+            node_selector={"kubernetes.io/hostname": "node1"},
         )
         crop_tasks.append(crop_task)
 
@@ -111,6 +113,7 @@ with DAG(
             get_logs=True,
             is_delete_operator_pod=True,
             image_pull_policy="IfNotPresent",
+            node_selector={"kubernetes.io/hostname": "node1"},
         )
         enhance_brightness_tasks.append(enhance_brightness_task)
 
@@ -134,6 +137,7 @@ with DAG(
             get_logs=True,
             image_pull_policy="IfNotPresent",
             is_delete_operator_pod=True,
+            node_selector={"kubernetes.io/hostname": "node1"},
         )
         enhance_contrast_tasks.append(enhance_contrast_task)
 
@@ -157,6 +161,7 @@ with DAG(
             get_logs=True,
             is_delete_operator_pod=True,
             image_pull_policy="IfNotPresent",
+            node_selector={"kubernetes.io/hostname": "node1"},
         )
         rotate_tasks.append(rotate_task)
 
@@ -179,6 +184,7 @@ with DAG(
             get_logs=True,
             is_delete_operator_pod=True,
             image_pull_policy="IfNotPresent",
+            node_selector={"kubernetes.io/hostname": "node1"},
         )
         grayscale_tasks.append(grayscale_task)
 
@@ -200,6 +206,7 @@ with DAG(
         is_delete_operator_pod=True,
         image_pull_policy="IfNotPresent",
         startup_timeout_seconds=600,  # increase time for startup (large image)
+        node_selector={"kubernetes.io/hostname": "node1"},
     )
 
     for crop in crop_tasks:
