@@ -49,7 +49,7 @@ with DAG(
             # image="kogsi/image_classification:offset",
             image="python:3.12-slim",
             cmds=["/bin/sh", "-c"],
-            arguments=["cat /proc/cpuinfo; python3 -c 'print(\"Python works\"'"],
+            arguments=["cat /proc/cpuinfo; python3 -c 'print(\"Python works\")'"],
             # cmds=["python3", "offset.py"],
             # arguments=[
             #     "--input_image_path", "training/input",
