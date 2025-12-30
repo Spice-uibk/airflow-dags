@@ -193,8 +193,8 @@ with DAG(
         task_id="classification_inference_task_training",
         name="classification-inference-task-training",
         namespace=NAMESPACE,
-        image="kogsi/image_classification:classification-train",
-        cmds=["python3", "classification-train.py"],
+        image="kogsi/image_classification:classification-train-old",
+        cmds=["python3", "classification-train-old.py"],
         arguments=[
             "--train_data_path", "training/grayscaled",
             "--output_artifact_path", "models/",
