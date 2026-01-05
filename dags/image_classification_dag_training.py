@@ -193,8 +193,7 @@ with DAG(
         task_id="classification_inference_task_training",
         name="classification-inference-task-training",
         namespace=NAMESPACE,
-        image="kogsi/image_classification:classification-train-old",
-        cmds=["python3", "classification-train-old.py"],
+        image="kogsi/image_classification:classification-train-tf1",
         arguments=[
             "--train_data_path", "training/grayscaled",
             "--output_artifact_path", "models/",
@@ -214,7 +213,7 @@ with DAG(
         env_vars=minio_env_dict,
         get_logs=True,
         is_delete_operator_pod=True,
-        image_pull_policy="Always",
+        image_pull_policy="IfNotPresent",
         startup_timeout_seconds=600,  # increase time for startup (large image)
         node_selector={"kubernetes.io/hostname": "node1"},
     )
