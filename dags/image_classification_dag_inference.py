@@ -34,15 +34,10 @@ with DAG(
     start_date=datetime(2025, 1, 1),
 ) as dag:
 
-    NUM_OFFSET_TASKS = int(Variable.get("image_classification_inference_offset", default_var=1))
-    NUM_CROP_TASKS = int(Variable.get("image_classification_inference_crop", default_var=1))
-    NUM_ENHANCE_BRIGHTNESS_TASKS = int(Variable.get("image_classification_inference_enhance_brightness", default_var=1))
-    NUM_ENHANCE_CONTRAST_TASKS = int(Variable.get("image_classification_inference_enhance_contrast", default_var=1))
-    NUM_ROTATE_TASKS = int(Variable.get("image_classification_inference_rotate", default_var=1))
-    NUM_GRAYSCALE_TASKS = int(Variable.get("image_classification_inference_grayscale", default_var=1))
+    NUM_PARALLEL_TASKS = int(Variable.get("image_classification_inference_num_workers", default_var=1))
 
     offset_tasks = []
-    for i in range(NUM_OFFSET_TASKS):
+    for i in range(NUM_PARALLEL_TASKS):
         offset_task = KubernetesPodOperator(
             task_id=f"offset_task_{i}",
             name=f"offset-task-{i}",
@@ -55,7 +50,7 @@ with DAG(
                 "--dy", "0",
                 "--bucket_name", MINIO_BUCKET,
                 "--chunk_id", str(i),
-                "--num_tasks", str(NUM_OFFSET_TASKS),
+                "--num_tasks", str(NUM_PARALLEL_TASKS),
             ],
             env_vars=minio_env_dict,
             get_logs=True,
@@ -67,7 +62,7 @@ with DAG(
 
 
     crop_tasks = []
-    for i in range(NUM_CROP_TASKS):
+    for i in range(NUM_PARALLEL_TASKS):
         crop_task = KubernetesPodOperator(
             task_id=f"crop_task_{i}",
             name=f"crop-task-{i}",
@@ -82,7 +77,7 @@ with DAG(
                 "--bottom", "330",
                 "--bucket_name", MINIO_BUCKET,
                 "--chunk_id", str(i),
-                "--num_tasks", str(NUM_CROP_TASKS),
+                "--num_tasks", str(NUM_PARALLEL_TASKS),
             ],
             env_vars=minio_env_dict,
             get_logs=True,
@@ -93,7 +88,7 @@ with DAG(
         crop_tasks.append(crop_task)
 
     enhance_brightness_tasks = []
-    for i in range(NUM_ENHANCE_BRIGHTNESS_TASKS):
+    for i in range(NUM_PARALLEL_TASKS):
         enhance_brightness_task = KubernetesPodOperator(
             task_id=f"enhance_brightness_task_{i}",
             name=f"enhance-brightness-task-{i}",
@@ -105,7 +100,7 @@ with DAG(
                 "--factor", str(1.2),
                 "--bucket_name", MINIO_BUCKET,
                 "--chunk_id", str(i),
-                "--num_tasks", str(NUM_ENHANCE_BRIGHTNESS_TASKS),
+                "--num_tasks", str(NUM_PARALLEL_TASKS),
             ],
             env_vars=minio_env_dict,
             get_logs=True,
@@ -116,7 +111,7 @@ with DAG(
         enhance_brightness_tasks.append(enhance_brightness_task)
 
     enhance_contrast_tasks = []
-    for i in range(NUM_ENHANCE_CONTRAST_TASKS):
+    for i in range(NUM_PARALLEL_TASKS):
         enhance_contrast_task = KubernetesPodOperator(
             task_id=f"enhance_contrast_task_{i}",
             name=f"enhance-contrast-task-{i}",
@@ -128,7 +123,7 @@ with DAG(
                 "--factor", str(1.2),
                 "--bucket_name", MINIO_BUCKET,
                 "--chunk_id", str(i),
-                "--num_tasks", str(NUM_ENHANCE_BRIGHTNESS_TASKS),
+                "--num_tasks", str(NUM_PARALLEL_TASKS),
             ],
             env_vars=minio_env_dict,
             get_logs=True,
@@ -139,7 +134,7 @@ with DAG(
         enhance_contrast_tasks.append(enhance_contrast_task)
 
     rotate_tasks = []
-    for i in range(NUM_ROTATE_TASKS):
+    for i in range(NUM_PARALLEL_TASKS):
         rotate_task = KubernetesPodOperator(
             task_id=f"rotate_task_{i}",
             name=f"rotate-task-{i}",
@@ -151,7 +146,7 @@ with DAG(
                 "--rotation", " ".join(["0"]),
                 "--bucket_name", MINIO_BUCKET,
                 "--chunk_id", str(i),
-                "--num_tasks", str(NUM_ENHANCE_BRIGHTNESS_TASKS),
+                "--num_tasks", str(NUM_PARALLEL_TASKS),
             ],
             env_vars=minio_env_dict,
             get_logs=True,
@@ -162,7 +157,7 @@ with DAG(
         rotate_tasks.append(rotate_task)
 
     grayscale_tasks = []
-    for i in range(NUM_GRAYSCALE_TASKS):
+    for i in range(NUM_PARALLEL_TASKS):
         grayscale_task = KubernetesPodOperator(
             task_id=f"to_grayscale_task_{i}",
             name=f"to-grayscale-task-{i}",
@@ -173,7 +168,7 @@ with DAG(
                 "--output_image_path", "inference/grayscaled",
                 "--bucket_name", MINIO_BUCKET,
                 "--chunk_id", str(i),
-                "--num_tasks", str(NUM_ENHANCE_BRIGHTNESS_TASKS),
+                "--num_tasks", str(NUM_PARALLEL_TASKS),
             ],
             env_vars=minio_env_dict,
             get_logs=True,
@@ -203,19 +198,14 @@ with DAG(
         node_selector={"kubernetes.io/hostname": "node1"},
     )
 
-    for crop in crop_tasks:
-        offset_tasks >> crop
-
-    for enhance_brightness in enhance_brightness_tasks:
-        crop_tasks >> enhance_brightness
-
-    for enhance_contrast in enhance_contrast_tasks:
-        enhance_brightness_tasks >> enhance_contrast
-
-    for rotate in rotate_tasks:
-        enhance_contrast_tasks >> rotate
-
-    for grayscale in grayscale_tasks:
-        rotate_tasks >> grayscale
+    for i in range(NUM_PARALLEL_TASKS):
+        (
+            offset_tasks[i]
+            >> crop_tasks[i]
+            >> enhance_brightness_tasks[i]
+            >> enhance_contrast_tasks[i]
+            >> rotate_tasks[i]
+            >> grayscale_tasks[i]
+        )
 
     grayscale_tasks >> classification_inference_task
