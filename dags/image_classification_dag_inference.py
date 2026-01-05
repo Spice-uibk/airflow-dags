@@ -48,7 +48,6 @@ with DAG(
             name=f"offset-task-{i}",
             namespace=NAMESPACE,
             image="kogsi/image_classification:offset",
-            cmds=["python3", "offset.py"],
             arguments=[
                 "--input_image_path", "inference/input",
                 "--output_image_path", "inference/offsetted",
@@ -61,7 +60,7 @@ with DAG(
             env_vars=minio_env_dict,
             get_logs=True,
             is_delete_operator_pod=True,
-            image_pull_policy="IfNotPresent",
+            image_pull_policy="Always",
             node_selector={"kubernetes.io/hostname": "node1"},
         )
         offset_tasks.append(offset_task)
@@ -74,7 +73,6 @@ with DAG(
             name=f"crop-task-{i}",
             namespace=NAMESPACE,
             image="kogsi/image_classification:crop",
-            cmds=["python3", "crop.py"],
             arguments=[
                 "--input_image_path", "inference/offsetted",
                 "--output_image_path", "inference/cropped",
@@ -89,7 +87,7 @@ with DAG(
             env_vars=minio_env_dict,
             get_logs=True,
             is_delete_operator_pod=True,
-            image_pull_policy="IfNotPresent",
+            image_pull_policy="Always",
             node_selector={"kubernetes.io/hostname": "node1"},
         )
         crop_tasks.append(crop_task)
@@ -101,7 +99,6 @@ with DAG(
             name=f"enhance-brightness-task-{i}",
             namespace=NAMESPACE,
             image="kogsi/image_classification:enhance-brightness",
-            cmds=["python3", "enhance-brightness.py"],
             arguments=[
                 "--input_image_path", "inference/cropped",
                 "--output_image_path", "inference/enhanced-brightness",
@@ -113,7 +110,7 @@ with DAG(
             env_vars=minio_env_dict,
             get_logs=True,
             is_delete_operator_pod=True,
-            image_pull_policy="IfNotPresent",
+            image_pull_policy="Always",
             node_selector={"kubernetes.io/hostname": "node1"},
         )
         enhance_brightness_tasks.append(enhance_brightness_task)
@@ -125,7 +122,6 @@ with DAG(
             name=f"enhance-contrast-task-{i}",
             namespace=NAMESPACE,
             image="kogsi/image_classification:enhance-contrast",
-            cmds=["python3", "enhance-contrast.py"],
             arguments=[
                 "--input_image_path", "inference/enhanced-brightness",
                 "--output_image_path", "inference/enhanced-contrast",
@@ -136,7 +132,7 @@ with DAG(
             ],
             env_vars=minio_env_dict,
             get_logs=True,
-            image_pull_policy="IfNotPresent",
+            image_pull_policy="Always",
             is_delete_operator_pod=True,
             node_selector={"kubernetes.io/hostname": "node1"},
         )
@@ -157,11 +153,10 @@ with DAG(
                 "--chunk_id", str(i),
                 "--num_tasks", str(NUM_ENHANCE_BRIGHTNESS_TASKS),
             ],
-            cmds=["python3", "rotate.py"],
             env_vars=minio_env_dict,
             get_logs=True,
             is_delete_operator_pod=True,
-            image_pull_policy="IfNotPresent",
+            image_pull_policy="Always",
             node_selector={"kubernetes.io/hostname": "node1"},
         )
         rotate_tasks.append(rotate_task)
@@ -173,7 +168,6 @@ with DAG(
             name=f"to-grayscale-task-{i}",
             namespace=NAMESPACE,
             image="kogsi/image_classification:to-grayscale",
-            cmds=["python3", "to-grayscale.py"],
             arguments=[
                 "--input_image_path", "inference/rotated",
                 "--output_image_path", "inference/grayscaled",
@@ -184,7 +178,7 @@ with DAG(
             env_vars=minio_env_dict,
             get_logs=True,
             is_delete_operator_pod=True,
-            image_pull_policy="IfNotPresent",
+            image_pull_policy="Always",
             node_selector={"kubernetes.io/hostname": "node1"},
         )
         grayscale_tasks.append(grayscale_task)
@@ -204,7 +198,7 @@ with DAG(
         env_vars=minio_env_dict,
         get_logs=True,
         is_delete_operator_pod=True,
-        image_pull_policy="IfNotPresent",
+        image_pull_policy="Always",
         startup_timeout_seconds=600,  # increase time for startup (large image)
         node_selector={"kubernetes.io/hostname": "node1"},
     )
