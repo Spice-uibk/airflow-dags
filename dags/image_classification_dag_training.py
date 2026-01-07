@@ -45,7 +45,7 @@ with DAG(
             image="kogsi/image_classification:offset",
             arguments=[
                 "--input_image_path", "training/input",
-                "--output_image_path", "training/offsetted",
+                "--output_image_path", f"training/offsetted/{i}",
                 "--dx", "0",
                 "--dy", "0",
                 "--bucket_name", MINIO_BUCKET,
@@ -55,7 +55,7 @@ with DAG(
             env_vars=minio_env_dict,
             get_logs=True,
             is_delete_operator_pod=True,
-            image_pull_policy="IfNotPresent",
+            image_pull_policy="Always",
             node_selector={"kubernetes.io/hostname": "node1"},
         )
         offset_tasks.append(offset_task)
@@ -69,8 +69,8 @@ with DAG(
             namespace=NAMESPACE,
             image="kogsi/image_classification:crop",
             arguments=[
-                "--input_image_path", "training/offsetted",
-                "--output_image_path", "training/cropped",
+                "--input_image_path", f"training/offsetted/{i}",
+                "--output_image_path", f"training/cropped/{i}",
                 "--left", "20",
                 "--top", "20",
                 "--right", "330",
@@ -82,7 +82,7 @@ with DAG(
             env_vars=minio_env_dict,
             get_logs=True,
             is_delete_operator_pod=True,
-            image_pull_policy="IfNotPresent",
+            image_pull_policy="Always",
             node_selector={"kubernetes.io/hostname": "node1"},
         )
         crop_tasks.append(crop_task)
@@ -95,8 +95,8 @@ with DAG(
             namespace=NAMESPACE,
             image="kogsi/image_classification:enhance-brightness",
             arguments=[
-                "--input_image_path", "training/cropped",
-                "--output_image_path", "training/enhanced-brightness",
+                "--input_image_path", f"training/cropped/{i}",
+                "--output_image_path", f"training/enhanced-brightness/{i}",
                 "--factor", str(1.2),
                 "--bucket_name", MINIO_BUCKET,
                 "--chunk_id", str(i),
@@ -105,7 +105,7 @@ with DAG(
             env_vars=minio_env_dict,
             get_logs=True,
             is_delete_operator_pod=True,
-            image_pull_policy="IfNotPresent",
+            image_pull_policy="Always",
             node_selector={"kubernetes.io/hostname": "node1"},
         )
         enhance_brightness_tasks.append(enhance_brightness_task)
@@ -118,8 +118,8 @@ with DAG(
             namespace=NAMESPACE,
             image="kogsi/image_classification:enhance-contrast",
             arguments=[
-                "--input_image_path", "training/enhanced-brightness",
-                "--output_image_path", "training/enhanced-contrast",
+                "--input_image_path", f"training/enhanced-brightness/{i}",
+                "--output_image_path", f"training/enhanced-contrast/{i}",
                 "--factor", str(1.2),
                 "--bucket_name", MINIO_BUCKET,
                 "--chunk_id", str(i),
@@ -127,7 +127,7 @@ with DAG(
             ],
             env_vars=minio_env_dict,
             get_logs=True,
-            image_pull_policy="IfNotPresent",
+            image_pull_policy="Always",
             is_delete_operator_pod=True,
             node_selector={"kubernetes.io/hostname": "node1"},
         )
@@ -141,8 +141,8 @@ with DAG(
             namespace=NAMESPACE,
             image="kogsi/image_classification:rotate",
             arguments=[
-                "--input_image_path", "training/enhanced-contrast",
-                "--output_image_path", "training/rotated",
+                "--input_image_path", f"training/enhanced-contrast/{i}",
+                "--output_image_path", f"training/rotated/{i}",
                 "--rotation", " ".join(["90", "270", "0", "180"]),
                 "--bucket_name", MINIO_BUCKET,
                 "--chunk_id", str(i),
@@ -151,7 +151,7 @@ with DAG(
             env_vars=minio_env_dict,
             get_logs=True,
             is_delete_operator_pod=True,
-            image_pull_policy="IfNotPresent",
+            image_pull_policy="Always",
             node_selector={"kubernetes.io/hostname": "node1"},
         )
         rotate_tasks.append(rotate_task)
@@ -164,7 +164,7 @@ with DAG(
             namespace=NAMESPACE,
             image="kogsi/image_classification:to-grayscale",
             arguments=[
-                "--input_image_path", "training/rotated",
+                "--input_image_path", f"training/rotated/{i}",
                 "--output_image_path", "training/grayscaled",
                 "--bucket_name", MINIO_BUCKET,
                 "--chunk_id", str(i),
@@ -173,7 +173,7 @@ with DAG(
             env_vars=minio_env_dict,
             get_logs=True,
             is_delete_operator_pod=True,
-            image_pull_policy="IfNotPresent",
+            image_pull_policy="Always",
             node_selector={"kubernetes.io/hostname": "node1"},
         )
         grayscale_tasks.append(grayscale_task)
@@ -202,7 +202,7 @@ with DAG(
         env_vars=minio_env_dict,
         get_logs=True,
         is_delete_operator_pod=True,
-        image_pull_policy="IfNotPresent",
+        image_pull_policy="Always",
         startup_timeout_seconds=600,  # increase time for startup (large image)
         node_selector={"kubernetes.io/hostname": "node1"},
     )
