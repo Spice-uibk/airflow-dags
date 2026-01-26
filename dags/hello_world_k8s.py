@@ -54,7 +54,7 @@ k8s_sleep_task = KubernetesPodOperator(
     namespace='stefan-dev',
     image='python:3.9-slim',
     cmds=['python', '-c'],
-    arguments=['import time; time.sleep(20); print("Done sleeping!")'],
+    arguments=['import time; time.sleep(120); print("Done sleeping!")'],
     in_cluster=True,
     dag=dag,
 )
