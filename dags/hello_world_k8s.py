@@ -2,6 +2,18 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
 from airflow.operators.empty import EmptyOperator
+from kubernetes.client import models as k8s
+
+resources = k8s.V1ResourceRequirements(
+    requests={
+        "cpu": "250m",
+        "memory": "216Mi"
+    },
+    limits={
+        "cpu": "500m",
+        "memory": "500Mi"
+    }
+)
 
 default_args = {
     'owner': 'stefanpedratscher',
@@ -54,6 +66,7 @@ k8s_sleep_task = KubernetesPodOperator(
     namespace='stefan-dev',
     image='python:3.9-slim',
     cmds=['python', '-c'],
+    container_resources=resources,
     arguments=['import time; time.sleep(120); print("Done sleeping!")'],
     in_cluster=True,
     dag=dag,
