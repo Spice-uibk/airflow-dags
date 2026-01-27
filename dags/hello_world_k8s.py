@@ -47,6 +47,7 @@ k8s_hello_task = KubernetesPodOperator(
     arguments=['print("Hello world from Kubernetes Pod!")'],
     in_cluster=True,  # Change to False if Airflow runs outside K8s
     dag=dag,
+    node_selector={"kubernetes.io/hostname": "node1"},
 )
 
 k8s_date_task = KubernetesPodOperator(
@@ -70,6 +71,7 @@ k8s_sleep_task = KubernetesPodOperator(
     arguments=['import time; time.sleep(120); print("Done sleeping!")'],
     in_cluster=True,
     dag=dag,
+    node_selector={"kubernetes.io/hostname": "node1"},
 )
 
 end_task = EmptyOperator(
