@@ -94,7 +94,7 @@ with DAG(
             is_delete_operator_pod=True,
             image_pull_policy="IfNotPresent",
             execution_timeout=timedelta(hours=1),
-            node_selector={"kubernetes.io/hostname": "node1"},
+            # node_selector={"kubernetes.io/hostname": "node1"},
         )
         individual_tasks.append(task)
 
@@ -115,7 +115,7 @@ with DAG(
         is_delete_operator_pod=True,
         image_pull_policy="IfNotPresent",
         execution_timeout=timedelta(hours=1),
-        node_selector={"kubernetes.io/hostname": "node1"},
+        # node_selector={"kubernetes.io/hostname": "node1"},
     )
 
     # Individuals merge task
@@ -135,7 +135,7 @@ with DAG(
         is_delete_operator_pod=True,
         image_pull_policy="IfNotPresent",
         execution_timeout=timedelta(hours=1),
-        node_selector={"kubernetes.io/hostname": "node1"},
+        # node_selector={"kubernetes.io/hostname": "node1"},
     )
 
     # Mutations Overlap task
@@ -161,7 +161,7 @@ with DAG(
                 is_delete_operator_pod=True,
                 image_pull_policy="IfNotPresent",
                 execution_timeout=timedelta(hours=1),
-                node_selector={"kubernetes.io/hostname": "node1"},
+                # node_selector={"kubernetes.io/hostname": "node1"},
             )
             mutations_overlap_tasks.append(task)
 
@@ -186,7 +186,7 @@ with DAG(
                 is_delete_operator_pod=True,
                 image_pull_policy="IfNotPresent",
                 execution_timeout=timedelta(hours=1),
-                node_selector={"kubernetes.io/hostname": "node1"},
+                # node_selector={"kubernetes.io/hostname": "node1"},
             )
 
             freq_chunk_size = FREQ_TOTAL_PLOTS // num_workers
@@ -216,7 +216,7 @@ with DAG(
                     is_delete_operator_pod=True,
                     image_pull_policy="IfNotPresent",
                     execution_timeout=timedelta(hours=1),
-                    node_selector={"kubernetes.io/hostname": "node1"},
+                    # node_selector={"kubernetes.io/hostname": "node1"},
                 )
 
                 individuals_merge_task >> freq_calc_plot
@@ -241,7 +241,7 @@ with DAG(
                 is_delete_operator_pod=False,
                 image_pull_policy="IfNotPresent",
                 execution_timeout=timedelta(hours=1),
-                node_selector={"kubernetes.io/hostname": "node1"},
+                # node_selector={"kubernetes.io/hostname": "node1"},
             )
             individuals_merge_task >> task
             sifting_task >> task
