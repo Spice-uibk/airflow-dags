@@ -15,7 +15,8 @@ default_args = {
 }
 
 # MinIO configuration
-MINIO_ENDPOINT = "minio.stefan-dev.svc.cluster.local:9000"
+# MINIO_ENDPOINT = "minio.stefan-dev.svc.cluster.local:9000"
+MINIO_ENDPOINT = "minio.minio.svc.cluster.local:9000"
 MINIO_ACCESS_KEY = "minioadmin"
 MINIO_SECRET_KEY = "minioadmin"
 CHROM_NR = "22"
@@ -23,7 +24,7 @@ MINIO_BUCKET = "genome-data"
 KEY_INPUT_INDIVIDUAL = "ALL.chr22.80000.vcf.gz"
 KEY_INPUT_SIFTING = "ALL.chr22.phase3_shapeit2_mvncall_integrated_v5.20130502.sites.annotation.vcf.gz"
 
-NAMESPACE = "stefan-dev"
+NAMESPACE = "default"
 
 # Constants for frequency task
 FREQ_TOTAL_PLOTS = 1000
