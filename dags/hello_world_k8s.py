@@ -19,6 +19,7 @@ default_args = {
     'owner': 'stefanpedratscher',
     'depends_on_past': False,
     'email_on_failure': False,
+    'start_date': datetime(2026, 1, 1),
     'email_on_retry': False,
     'retries': 1,
     'retry_delay': timedelta(minutes=1),
@@ -41,7 +42,7 @@ start_task = EmptyOperator(
 k8s_hello_task = KubernetesPodOperator(
     task_id='k8s_hello',
     name='hello-pod',
-    namespace='stefan-dev',
+    # namespace='stefan-dev',
     image='python:3.9-slim',
     cmds=['python', '-c'],
     arguments=['print("Hello world from Kubernetes Pod!")'],
@@ -53,7 +54,7 @@ k8s_hello_task = KubernetesPodOperator(
 k8s_date_task = KubernetesPodOperator(
     task_id='k8s_date',
     name='date-pod',
-    namespace='stefan-dev',
+    # namespace='stefan-dev',
     image='python:3.9-slim',
     cmds=['python', '-c'],
     arguments=['import datetime; print(f"Current date and time: {datetime.datetime.now()}")'],
@@ -64,7 +65,7 @@ k8s_date_task = KubernetesPodOperator(
 k8s_sleep_task = KubernetesPodOperator(
     task_id='k8s_sleep',
     name='sleep-pod',
-    namespace='stefan-dev',
+    # namespace='stefan-dev',
     image='python:3.9-slim',
     cmds=['python', '-c'],
     container_resources=resources,
