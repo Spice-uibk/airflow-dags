@@ -12,12 +12,12 @@ default_args = {
 }
 
 # MinIO configuration
-MINIO_ENDPOINT = "minio.stefan-dev.svc.cluster.local:9000"
+MINIO_ENDPOINT = "minio.minio.svc.cluster.local:9000"
 MINIO_ACCESS_KEY = "minioadmin"
 MINIO_SECRET_KEY = "minioadmin"
 MINIO_BUCKET = "image-classification-data"
 
-NAMESPACE = "stefan-dev"
+NAMESPACE = "defaultdev"
 
 minio_env_dict = {
     "MINIO_ENDPOINT": MINIO_ENDPOINT,
@@ -182,7 +182,7 @@ with DAG(
         task_id="classification_inference_task",
         name="classification-inference-task",
         namespace=NAMESPACE,
-        image="kogsi/image_classification:classification-inference-tf1",
+        image="kogsi/image_classification:classification-inference-tf2",
         arguments=[
             "--saved_model_path", "models/",
             "--inference_data_path", "inference/grayscaled",
