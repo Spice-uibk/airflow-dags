@@ -12,12 +12,12 @@ default_args = {
 }
 
 # MinIO configuration
-MINIO_ENDPOINT = "minio.stefan-dev.svc.cluster.local:9000"
+MINIO_ENDPOINT = "minio.minio.svc.cluster.local:9000"
 MINIO_ACCESS_KEY = "minioadmin"
 MINIO_SECRET_KEY = "minioadmin"
 MINIO_BUCKET = "image-classification-data"
 
-NAMESPACE = "stefan-dev"
+NAMESPACE = "default"
 
 minio_env_dict = {
     "MINIO_ENDPOINT": MINIO_ENDPOINT,
