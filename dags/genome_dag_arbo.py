@@ -23,7 +23,7 @@ default_args = {
 TOTAL_ITEMS = 80000
 FREQ_TOTAL_PLOTS = 1000
 
-MINIO_ENDPOINT = "minio.minio.svc.cluster.local:9000"
+MINIO_ENDPOINT = "minio.default.svc.cluster.local:9000"
 MINIO_ACCESS_KEY = "minioadmin"
 MINIO_SECRET_KEY = "minioadmin"
 CHROM_NR = "22"

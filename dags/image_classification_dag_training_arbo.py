@@ -18,12 +18,12 @@ default_args = {
     "retry_delay": timedelta(minutes=5),
 }
 
-MINIO_ENDPOINT = "minio.stefan-dev.svc.cluster.local:9000"
+MINIO_ENDPOINT = "minio.default.svc.cluster.local:9000"
 MINIO_ACCESS_KEY = "minioadmin"
 MINIO_SECRET_KEY = "minioadmin"
 MINIO_BUCKET = "image-classification-data"
 
-NAMESPACE = "kogler-dev"
+NAMESPACE = "default"
 
 minio_env_dict = {
     "MINIO_ENDPOINT": MINIO_ENDPOINT,
@@ -166,7 +166,7 @@ with DAG(
             get_logs=True,
             is_delete_operator_pod=True,
             image_pull_policy="IfNotPresent",
-            node_selector={"kubernetes.io/hostname": "node1"},
+            # node_selector={"kubernetes.io/hostname": "node1"},
         )
 
         crop = KubernetesPodOperator(
@@ -179,7 +179,7 @@ with DAG(
             get_logs=True,
             is_delete_operator_pod=True,
             image_pull_policy="IfNotPresent",
-            node_selector={"kubernetes.io/hostname": "node1"},
+            # node_selector={"kubernetes.io/hostname": "node1"},
         )
 
         enhance_brightness = KubernetesPodOperator(
@@ -192,7 +192,7 @@ with DAG(
             get_logs=True,
             is_delete_operator_pod=True,
             image_pull_policy="IfNotPresent",
-            node_selector={"kubernetes.io/hostname": "node1"},
+            # node_selector={"kubernetes.io/hostname": "node1"},
         )
 
         enhance_contrast = KubernetesPodOperator(
@@ -205,7 +205,7 @@ with DAG(
             get_logs=True,
             is_delete_operator_pod=True,
             image_pull_policy="IfNotPresent",
-            node_selector={"kubernetes.io/hostname": "node1"},
+            # node_selector={"kubernetes.io/hostname": "node1"},
         )
 
         rotate = KubernetesPodOperator(
@@ -218,7 +218,7 @@ with DAG(
             get_logs=True,
             is_delete_operator_pod=True,
             image_pull_policy="IfNotPresent",
-            node_selector={"kubernetes.io/hostname": "node1"},
+            # node_selector={"kubernetes.io/hostname": "node1"},
         )
 
         grayscale = KubernetesPodOperator(
@@ -231,7 +231,7 @@ with DAG(
             get_logs=True,
             is_delete_operator_pod=True,
             image_pull_policy="IfNotPresent",
-            node_selector={"kubernetes.io/hostname": "node1"},
+            # node_selector={"kubernetes.io/hostname": "node1"},
         )
 
         offset >> crop >> enhance_brightness >> enhance_contrast >> rotate >> grayscale
@@ -276,7 +276,7 @@ with DAG(
         get_logs=True,
         is_delete_operator_pod=True,
         image_pull_policy="IfNotPresent",
-        node_selector={"kubernetes.io/hostname": "node1"},
+        # node_selector={"kubernetes.io/hostname": "node1"},
     )
 
 
