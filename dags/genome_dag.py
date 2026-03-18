@@ -16,7 +16,7 @@ default_args = {
 
 # MinIO configuration
 # MINIO_ENDPOINT = "minio.stefan-dev.svc.cluster.local:9000"
-MINIO_ENDPOINT = "minio.default.svc.cluster.local:9000"
+MINIO_ENDPOINT = "minio.stefan-dev.svc.cluster.local:9000"
 MINIO_ACCESS_KEY = "minioadmin"
 MINIO_SECRET_KEY = "minioadmin"
 CHROM_NR = "22"
@@ -24,7 +24,7 @@ MINIO_BUCKET = "genome-data"
 KEY_INPUT_INDIVIDUAL = "ALL.chr22.80000.vcf.gz"
 KEY_INPUT_SIFTING = "ALL.chr22.phase3_shapeit2_mvncall_integrated_v5.20130502.sites.annotation.vcf.gz"
 
-NAMESPACE = "default"
+NAMESPACE = "stefan-dev"
 
 # Constants for frequency task
 FREQ_TOTAL_PLOTS = 1000
@@ -95,7 +95,7 @@ with DAG(
             is_delete_operator_pod=True,
             image_pull_policy="IfNotPresent",
             execution_timeout=timedelta(hours=1),
-            # node_selector={"kubernetes.io/hostname": "node1"},
+            node_selector={"kubernetes.io/hostname": "node1"},
         )
         individual_tasks.append(task)
 
@@ -116,7 +116,7 @@ with DAG(
         is_delete_operator_pod=True,
         image_pull_policy="IfNotPresent",
         execution_timeout=timedelta(hours=1),
-        # node_selector={"kubernetes.io/hostname": "node1"},
+        node_selector={"kubernetes.io/hostname": "node1"},
     )
 
     # Individuals merge task
@@ -136,7 +136,7 @@ with DAG(
         is_delete_operator_pod=True,
         image_pull_policy="IfNotPresent",
         execution_timeout=timedelta(hours=1),
-        # node_selector={"kubernetes.io/hostname": "node1"},
+        node_selector={"kubernetes.io/hostname": "node1"},
     )
 
     # Mutations Overlap task
@@ -162,7 +162,7 @@ with DAG(
                 is_delete_operator_pod=True,
                 image_pull_policy="IfNotPresent",
                 execution_timeout=timedelta(hours=1),
-                # node_selector={"kubernetes.io/hostname": "node1"},
+                node_selector={"kubernetes.io/hostname": "node1"},
             )
             mutations_overlap_tasks.append(task)
 
@@ -187,7 +187,7 @@ with DAG(
                 is_delete_operator_pod=True,
                 image_pull_policy="IfNotPresent",
                 execution_timeout=timedelta(hours=1),
-                # node_selector={"kubernetes.io/hostname": "node1"},
+                node_selector={"kubernetes.io/hostname": "node1"},
             )
 
             freq_chunk_size = FREQ_TOTAL_PLOTS // num_workers
@@ -217,7 +217,7 @@ with DAG(
                     is_delete_operator_pod=True,
                     image_pull_policy="IfNotPresent",
                     execution_timeout=timedelta(hours=1),
-                    # node_selector={"kubernetes.io/hostname": "node1"},
+                    node_selector={"kubernetes.io/hostname": "node1"},
                 )
 
                 individuals_merge_task >> freq_calc_plot
@@ -242,7 +242,7 @@ with DAG(
                 is_delete_operator_pod=False,
                 image_pull_policy="IfNotPresent",
                 execution_timeout=timedelta(hours=1),
-                # node_selector={"kubernetes.io/hostname": "node1"},
+                node_selector={"kubernetes.io/hostname": "node1"},
             )
             individuals_merge_task >> task
             sifting_task >> task

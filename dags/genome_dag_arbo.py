@@ -31,7 +31,7 @@ MINIO_BUCKET = "genome-data"
 KEY_INPUT_INDIVIDUAL = f"ALL.chr22.{TOTAL_ITEMS}.vcf.gz"
 KEY_INPUT_SIFTING = "ALL.chr22.phase3_shapeit2_mvncall_integrated_v5.20130502.sites.annotation.vcf.gz"
 
-NAMESPACE = "default"
+NAMESPACE = "stefan-dev"
 
 minio_env_vars = [
     k8s.V1EnvVar(name="MINIO_ENDPOINT", value=MINIO_ENDPOINT),
@@ -272,7 +272,7 @@ with DAG(
             cmds=["python3", "individual.py"],
             env_vars=minio_env_vars,
             is_delete_operator_pod=True,
-            # node_selector={"kubernetes.io/hostname": "node1"},
+            node_selector={"kubernetes.io/hostname": "node1"},
         ).expand(
             arguments=extract_pod_args(ind_plan)
         )
@@ -290,7 +290,7 @@ with DAG(
             ],
             env_vars=minio_env_vars,
             is_delete_operator_pod=True,
-            # node_selector={"kubernetes.io/hostname": "node1"},
+            node_selector={"kubernetes.io/hostname": "node1"},
         )
 
         feedback = report_feedback(ind_plan, "genome_individual", "individual_tasks.workers", True)
@@ -312,7 +312,7 @@ with DAG(
             cmds=["python3", "frequency_par2.py"],
             env_vars=minio_env_vars,
             is_delete_operator_pod=True,
-            # node_selector={"kubernetes.io/hostname": "node1"},
+            node_selector={"kubernetes.io/hostname": "node1"},
         ).expand(
             arguments=get_w_args(plan_data)
         )
@@ -325,7 +325,7 @@ with DAG(
             cmds=["python3", "frequency_par2.py"],
             env_vars=minio_env_vars,
             is_delete_operator_pod=True,
-            # node_selector={"kubernetes.io/hostname": "node1"},
+            node_selector={"kubernetes.io/hostname": "node1"},
         ).expand(
             arguments=get_m_args(plan_data)
         )
@@ -356,7 +356,7 @@ with DAG(
         is_delete_operator_pod=True,
         image_pull_policy="IfNotPresent",
         execution_timeout=timedelta(hours=1),
-        # node_selector={"kubernetes.io/hostname": "node1"},
+        node_selector={"kubernetes.io/hostname": "node1"},
     )
 
     # currently skips mutations_overlap tasks for cluster reasons
