@@ -18,7 +18,7 @@ MINIO_SECRET_KEY = "minioadmin"
 MINIO_BUCKET = "credit-card-fraud-data"
 MINIO_SECURE = "false"  # set to true for HTTPS
 
-NAMESPACE = "stefan-dev"
+NAMESPACE = "kogler-dev"
 
 # Base environment variables
 minio_env_dict = {

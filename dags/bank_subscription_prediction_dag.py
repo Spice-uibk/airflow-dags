@@ -17,7 +17,7 @@ MINIO_BUCKET = "bank-subscription-prediction-data"
 MINIO_SECURE = "false"
 DATA_PATH = "https://archive.ics.uci.edu/ml/machine-learning-databases/00222/bank-additional.zip"
 
-NAMESPACE = "stefan-dev"
+NAMESPACE = "kogler-dev"
 
 # Base environment variables
 minio_env_dict = {

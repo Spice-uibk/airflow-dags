@@ -24,7 +24,7 @@ MINIO_BUCKET = "montage-data"
 REMOTE_TMP = "tmp_processing"
 CONTEXT_FILE = "context_singleband.tar.gz"
 
-NAMESPACE = "stefan-dev"
+NAMESPACE = "kogler-dev"
 IMAGE = "kogsi/montage:latest"
 
 minio_env_vars = [

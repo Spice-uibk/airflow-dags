@@ -17,7 +17,7 @@ MINIO_ACCESS_KEY = "minioadmin"
 MINIO_SECRET_KEY = "minioadmin"
 MINIO_BUCKET = "cats-and-dogs"
 
-NAMESPACE = "stefan-dev"
+NAMESPACE = "kogler-dev"
 
 minio_env_dict = {
     "MINIO_ENDPOINT": MINIO_ENDPOINT,

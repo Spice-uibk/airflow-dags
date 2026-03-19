@@ -31,7 +31,7 @@ MINIO_BUCKET = "genome-data"
 KEY_INPUT_INDIVIDUAL = f"ALL.chr22.{TOTAL_ITEMS}.vcf.gz"
 KEY_INPUT_SIFTING = "ALL.chr22.phase3_shapeit2_mvncall_integrated_v5.20130502.sites.annotation.vcf.gz"
 
-NAMESPACE = "stefan-dev"
+NAMESPACE = "kogler-dev"
 
 minio_env_vars = [
     k8s.V1EnvVar(name="MINIO_ENDPOINT", value=MINIO_ENDPOINT),

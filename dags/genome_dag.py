@@ -24,7 +24,7 @@ MINIO_BUCKET = "genome-data"
 KEY_INPUT_INDIVIDUAL = "ALL.chr22.80000.vcf.gz"
 KEY_INPUT_SIFTING = "ALL.chr22.phase3_shapeit2_mvncall_integrated_v5.20130502.sites.annotation.vcf.gz"
 
-NAMESPACE = "stefan-dev"
+NAMESPACE = "kogler-dev"
 
 # Constants for frequency task
 FREQ_TOTAL_PLOTS = 1000
