@@ -5,8 +5,10 @@ from airflow.decorators import task, task_group
 from airflow.utils.trigger_rule import TriggerRule
 from datetime import datetime, timedelta
 
-from arbo_lib.airflow.optimizer import ArboOptimizer
-from arbo_lib.utils.logger import get_logger
+from arbo.airflow.optimizer import ArboOptimizer
+from arbo.utils.storage import MinioClient
+from arbo.utils.monitoring import PrometheusClient
+from arbo.utils.logger import get_logger
 
 logger = get_logger("arbo.iisas_image_training")
 
@@ -49,11 +51,11 @@ with DAG(
     def prepare_pipeline_configs():
         optimizer = ArboOptimizer(namespace=NAMESPACE, is_local=False)
 
-        cluster_load = optimizer.get_cluster_load(NAMESPACE)
+        cluster_load = PrometheusClient(NAMESPACE).get_cluster_load()
 
         logger.info(f"Cluster Load set to {cluster_load}")
 
-        input_quantity = optimizer.get_directory_size(
+        input_quantity = MinioClient.get_directory_size(
             endpoint_url=f"http://{MINIO_ENDPOINT}",
             access_key=MINIO_ACCESS_KEY,
             secret_key=MINIO_SECRET_KEY,
@@ -73,6 +75,7 @@ with DAG(
         calculated_gamma = configs[0]["gamma"]
         predicted_amdahl = configs[0]["amdahl_time"]
         predicted_residual = configs[0]["residual_prediction"]
+        predicted_std = configs[0]["predicted_std"]
 
         logger.info(f"Configuration received: s={s_opt}, gamma={calculated_gamma}, predicted time: {predicted_amdahl + predicted_residual:2f}")
 
@@ -138,7 +141,8 @@ with DAG(
                 "gamma": calculated_gamma,
                 "cluster_load": cluster_load,
                 "amdahl_time": predicted_amdahl,
-                "pred_residual": predicted_residual
+                "pred_residual": predicted_residual,
+                "pred_std": predicted_std
             }
         }
 
