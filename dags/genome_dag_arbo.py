@@ -7,8 +7,10 @@ from airflow.utils.trigger_rule import TriggerRule
 from kubernetes.client import models as k8s
 from datetime import datetime, timedelta
 
-from arbo_lib.airflow.optimizer import ArboOptimizer
-from arbo_lib.utils.logger import get_logger
+from arbo.airflow.optimizer import ArboOptimizer
+from arbo.utils.storage import MinioClient
+from arbo.utils.monitoring import PrometheusClient
+from arbo.utils.logger import get_logger
 
 logger = get_logger("arbo.genome_dag")
 
@@ -23,7 +25,7 @@ default_args = {
 TOTAL_ITEMS = 80000
 FREQ_TOTAL_PLOTS = 1000
 
-MINIO_ENDPOINT = "minio.default.svc.cluster.local:9000"
+MINIO_ENDPOINT = "minio.stefan-dev.svc.cluster.local:9000"
 MINIO_ACCESS_KEY = "minioadmin"
 MINIO_SECRET_KEY = "minioadmin"
 CHROM_NR = "22"
@@ -74,6 +76,7 @@ with DAG(
             cluster_load=metadata["cluster_load"],
             predicted_amdahl=metadata["amdahl_time"],
             predicted_residual=metadata["pred_residual"],
+            predicted_std=metadata["pred_std"],
             dag_id=dag_id,
             run_id=run_id,
             target_id=target_group_id,
@@ -107,11 +110,11 @@ with DAG(
     def prepare_individual_tasks():
         optimizer = ArboOptimizer(namespace=NAMESPACE, is_local=False)
 
-        cluster_load = optimizer.get_cluster_load(NAMESPACE)
+        cluster_load = PrometheusClient(NAMESPACE).get_cluster_load()
 
         logger.info(f"Cluster Load set to {cluster_load}")
 
-        input_quantity = optimizer.get_filesize(
+        input_quantity = MinioClient.get_filesize(
             endpoint_url=f"http://{MINIO_ENDPOINT}",
             access_key=MINIO_ACCESS_KEY,
             secret_key=MINIO_SECRET_KEY,
@@ -130,6 +133,7 @@ with DAG(
         calculated_gamma = configs[0]["gamma"]
         predicted_amdahl = configs[0]["amdahl_time"]
         predicted_residual = configs[0]["residual_prediction"]
+        predicted_std = configs[0]["predicted_std"]
 
         chunk_size = TOTAL_ITEMS // s_opt
 
@@ -168,6 +172,7 @@ with DAG(
             "cluster_load": cluster_load,
             "amdahl_time": predicted_amdahl,
             "pred_residual": predicted_residual,
+            "pred_std": predicted_std
         }
 
 
@@ -175,11 +180,11 @@ with DAG(
     def prepare_frequency_tasks(pop: str):
         optimizer = ArboOptimizer(namespace=NAMESPACE, is_local=False)
 
-        cluster_load = optimizer.get_cluster_load(NAMESPACE)
+        cluster_load = PrometheusClient(NAMESPACE).get_cluster_load()
 
         logger.info(f"Cluster Load set to {cluster_load}")
 
-        pop_input_size = optimizer.get_filesize(
+        pop_input_size = MinioClient.get_filesize(
             endpoint_url=f"http://{MINIO_ENDPOINT}",
             access_key=MINIO_ACCESS_KEY,
             secret_key=MINIO_SECRET_KEY,
@@ -198,6 +203,7 @@ with DAG(
         calculated_gamma = configs[0]["gamma"]
         predicted_amdahl = configs[0]["amdahl_time"]
         predicted_residual = configs[0]["residual_prediction"]
+        predicted_std = configs[0]["predicted_std"]
 
         chunk_size = FREQ_TOTAL_PLOTS // s_opt
 
@@ -242,6 +248,7 @@ with DAG(
             "pop": pop,
             "amdahl_time": predicted_amdahl,
             "pred_residual": predicted_residual,
+            "pred_std": predicted_std
         }
 
 
