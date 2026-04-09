@@ -10,22 +10,19 @@ default_args = {
     "retry_delay": timedelta(minutes=5),
 }
 
-MINIO_ENDPOINT = "minio.stefan-dev.svc.cluster.local:9000"
-MINIO_ACCESS_KEY = "minioadmin"
-MINIO_SECRET_KEY = "minioadmin"
-MINIO_BUCKET = "bank-subscription-prediction-data"
-MINIO_SECURE = "false"
+# Onedata configuration
+ONEDATA_HOST = "https://data.spice-platform.eu"
+ONEDATA_TOKEN = "your_access_token"  # Replace with your actual token
+ONEDATA_SPACE = "LucasSpace"         # Replace with your actual space name
 DATA_PATH = "https://archive.ics.uci.edu/ml/machine-learning-databases/00222/bank-additional.zip"
 
 NAMESPACE = "stefan-dev"
 
 # Base environment variables
-minio_env_dict = {
-    "MINIO_ENDPOINT": MINIO_ENDPOINT,
-    "MINIO_ACCESS_KEY": MINIO_ACCESS_KEY,
-    "MINIO_SECRET_KEY": MINIO_SECRET_KEY,
-    "MINIO_SECURE": MINIO_SECURE,
-    "MINIO_BUCKET": MINIO_BUCKET,
+onedata_env_dict = {
+    "ONEDATA_HOST": ONEDATA_HOST,
+    "ONEDATA_TOKEN": ONEDATA_TOKEN,
+    "ONEDATA_SPACE": ONEDATA_SPACE,
 }
 
 with DAG(
@@ -40,10 +37,10 @@ with DAG(
         task_id="loading",
         name="loading",
         namespace=NAMESPACE,
-        image="kogsi/bank_dag:loading",
+        image="leichtabgelenkt/bank_dag:loading",
         cmds=["python3", "loading.py"],
         arguments=["--data_path", DATA_PATH],
-        env_vars=minio_env_dict, 
+        env_vars=onedata_env_dict, 
         get_logs=True,
         is_delete_operator_pod=True,
         image_pull_policy="Always",
@@ -56,10 +53,10 @@ with DAG(
         task_id="cleaning",
         name="cleaning",
         namespace=NAMESPACE,
-        image="kogsi/bank_dag:cleaning",
+        image="leichtabgelenkt/bank_dag:cleaning",
         cmds=["python3", "cleaning.py"],
         env_vars={
-            **minio_env_dict,
+            **onedata_env_dict,
             "LOADING_XCOM": "{{ ti.xcom_pull(task_ids='loading') }}"
         },
         get_logs=True,
@@ -74,10 +71,10 @@ with DAG(
         task_id="preprocessing",
         name="preprocessing",
         namespace=NAMESPACE,
-        image="kogsi/bank_dag:preprocessing",
+        image="leichtabgelenkt/bank_dag:preprocessing",
         cmds=["python3", "preprocessing.py"],
         env_vars={
-            **minio_env_dict,
+            **onedata_env_dict,
             "CLEANING_XCOM": "{{ ti.xcom_pull(task_ids='cleaning') }}"
         },
         get_logs=True,
@@ -92,10 +89,10 @@ with DAG(
         task_id="splitting",
         name="splitting",
         namespace=NAMESPACE,
-        image="kogsi/bank_dag:splitting",
+        image="leichtabgelenkt/bank_dag:splitting",
         cmds=["python3", "splitting.py"],
         env_vars={
-            **minio_env_dict,
+            **onedata_env_dict,
             "PREPROCESSING_XCOM": "{{ ti.xcom_pull(task_ids='preprocessing') }}"
         },
         get_logs=True,
@@ -110,10 +107,10 @@ with DAG(
         task_id="training",
         name="training",
         namespace=NAMESPACE,
-        image="kogsi/bank_dag:training",
+        image="leichtabgelenkt/bank_dag:training",
         cmds=["python3", "training.py"],
         env_vars={
-            **minio_env_dict,
+            **onedata_env_dict,
             "X_TRAIN": "{{ ti.xcom_pull(task_ids='splitting')['X_train'] }}",
             "Y_TRAIN": "{{ ti.xcom_pull(task_ids='splitting')['y_train'] }}"
         },
@@ -129,10 +126,10 @@ with DAG(
         task_id="evaluation",
         name="evaluation",
         namespace=NAMESPACE,
-        image="kogsi/bank_dag:evaluation",
+        image="leichtabgelenkt/bank_dag:evaluation",
         cmds=["python3", "evaluation.py"],
         env_vars={
-            **minio_env_dict,
+            **onedata_env_dict,
             "MODEL": "{{ ti.xcom_pull(task_ids='training')['model'] }}",
             "FEATURE_SELECTOR": "{{ ti.xcom_pull(task_ids='training')['feature_selector'] }}",
             "X_TEST": "{{ ti.xcom_pull(task_ids='splitting')['X_test'] }}",
