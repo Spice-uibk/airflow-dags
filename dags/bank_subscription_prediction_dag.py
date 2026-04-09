@@ -12,11 +12,11 @@ default_args = {
 
 # Onedata configuration
 ONEDATA_HOST = "https://data.spice-platform.eu"
-ONEDATA_TOKEN = "your_access_token"  # Replace with your actual token
-ONEDATA_SPACE = "LucasSpace"         # Replace with your actual space name
+ONEDATA_TOKEN = "MDAyNGxvY2F00aW9uIGRhdGEuc3BpY2UtcGxhdGZvcm00uZXUKMDA2YmlkZW500aWZpZXIgMi9ubWQvdXNyLTVhZWEzZThiNTgwMDYzZDRhOWExOWY3NWFjMzViMWYzY2g5NzJlL2FjdC82YzU00YTc3ZTRjMjA3NTJkNzYwOTFiNWNlNGU00MzZmYWNoNTc3OAowMDE5Y2lkIGludGVyZmFjZSA9IHJlc3QKMDAxOGNpZCBzZXJ2aWNlID00gb3B3LSoKMDAyZnNpZ25hdHVyZSD9xyoau4ixjkpymKgfEXCok3QvWlqsxElGKjVRxVf32wo"
+ONEDATA_SPACE = "LucasSpace"
 DATA_PATH = "https://archive.ics.uci.edu/ml/machine-learning-databases/00222/bank-additional.zip"
 
-NAMESPACE = "stefan-dev"
+NAMESPACE = "default"
 
 # Base environment variables
 onedata_env_dict = {
@@ -46,7 +46,7 @@ with DAG(
         image_pull_policy="Always",
         do_xcom_push=True,
         reattach_on_restart=True,
-        node_selector={"kubernetes.io/hostname": "node1"}, 
+        # node_selector={"kubernetes.io/hostname": "node1"}, 
     )
 
     cleaning_task = KubernetesPodOperator(
@@ -64,7 +64,7 @@ with DAG(
         image_pull_policy="Always",
         do_xcom_push=True,
         reattach_on_restart=True,
-        node_selector={"kubernetes.io/hostname": "node1"}, 
+        # node_selector={"kubernetes.io/hostname": "node1"}, 
     )
 
     preprocessing_task = KubernetesPodOperator(
@@ -82,7 +82,7 @@ with DAG(
         image_pull_policy="Always",
         do_xcom_push=True,
         reattach_on_restart=True,
-        node_selector={"kubernetes.io/hostname": "node1"}, 
+        # node_selector={"kubernetes.io/hostname": "node1"}, 
     )
 
     splitting_task = KubernetesPodOperator(
@@ -100,7 +100,7 @@ with DAG(
         image_pull_policy="Always",
         do_xcom_push=True,
         reattach_on_restart=True,
-        node_selector={"kubernetes.io/hostname": "node1"}, 
+        # node_selector={"kubernetes.io/hostname": "node1"}, 
     )
 
     training_task = KubernetesPodOperator(
@@ -119,7 +119,7 @@ with DAG(
         image_pull_policy="Always",
         do_xcom_push=True,
         reattach_on_restart=True,
-        node_selector={"kubernetes.io/hostname": "node1"}, 
+        # node_selector={"kubernetes.io/hostname": "node1"}, 
     )
 
     evaluation_task = KubernetesPodOperator(
@@ -140,7 +140,7 @@ with DAG(
         image_pull_policy="Always",
         do_xcom_push=False,
         reattach_on_restart=True,
-        node_selector={"kubernetes.io/hostname": "node1"}, 
+        # node_selector={"kubernetes.io/hostname": "node1"}, 
     )
 
     loading_task >> cleaning_task >> preprocessing_task >> splitting_task >> training_task >> evaluation_task
