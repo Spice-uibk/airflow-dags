@@ -37,7 +37,7 @@ with DAG(
         task_id="loading",
         name="loading",
         namespace=NAMESPACE,
-        image="leichtabgelenkt/bank_dag:loading",
+        image="leichtabgelenkt/bank_subscription_prediction:loading",
         cmds=["python3", "loading.py"],
         arguments=["--data_path", DATA_PATH],
         env_vars=onedata_env_dict, 
@@ -53,7 +53,7 @@ with DAG(
         task_id="cleaning",
         name="cleaning",
         namespace=NAMESPACE,
-        image="leichtabgelenkt/bank_dag:cleaning",
+        image="leichtabgelenkt/bank_subscription_prediction:cleaning",
         cmds=["python3", "cleaning.py"],
         env_vars={
             **onedata_env_dict,
@@ -71,7 +71,7 @@ with DAG(
         task_id="preprocessing",
         name="preprocessing",
         namespace=NAMESPACE,
-        image="leichtabgelenkt/bank_dag:preprocessing",
+        image="leichtabgelenkt/bank_subscription_prediction:preprocessing",
         cmds=["python3", "preprocessing.py"],
         env_vars={
             **onedata_env_dict,
@@ -89,7 +89,7 @@ with DAG(
         task_id="splitting",
         name="splitting",
         namespace=NAMESPACE,
-        image="leichtabgelenkt/bank_dag:splitting",
+        image="leichtabgelenkt/bank_subscription_prediction:splitting",
         cmds=["python3", "splitting.py"],
         env_vars={
             **onedata_env_dict,
@@ -107,7 +107,7 @@ with DAG(
         task_id="training",
         name="training",
         namespace=NAMESPACE,
-        image="leichtabgelenkt/bank_dag:training",
+        image="leichtabgelenkt/bank_subscription_prediction:training",
         cmds=["python3", "training.py"],
         env_vars={
             **onedata_env_dict,
@@ -126,7 +126,7 @@ with DAG(
         task_id="evaluation",
         name="evaluation",
         namespace=NAMESPACE,
-        image="leichtabgelenkt/bank_dag:evaluation",
+        image="leichtabgelenkt/bank_subscription_prediction:evaluation",
         cmds=["python3", "evaluation.py"],
         env_vars={
             **onedata_env_dict,
