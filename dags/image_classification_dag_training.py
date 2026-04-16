@@ -34,7 +34,7 @@ with DAG(
     start_date=datetime(2025, 1, 1),
 ) as dag:
 
-    NUM_PARALLEL_TASKS = int(Variable.get("image_classification_training_num_workers", default_var=1))
+    NUM_PARALLEL_TASKS = 20  # (Variable.get("image_classification_training_num_workers", default_var=1))
 
     offset_tasks = []
     for i in range(NUM_PARALLEL_TASKS):
