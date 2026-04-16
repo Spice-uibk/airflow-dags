@@ -10,6 +10,8 @@ default_args = {
     'retry_delay': timedelta(minutes=1),
 }
 
+NAMESPACE = "default"
+
 dag = DAG(
     'kpo_only_dynamic_mapping',
     default_args=default_args,
@@ -36,23 +38,21 @@ with open('/airflow/xcom/return.json', 'w') as f:
     generator_pod = KubernetesPodOperator(
         task_id='generate_list_pod',
         name='generator-pod',
-        namespace='stefan-dev',
+        namespace=NAMESPACE,
         image='python:3.9-slim',
         env_vars={'COUNT': '{{ var.value.get("kpo_parallelism_count", 4) }}'},
         cmds=['python', '-c', generator_cmd],
         in_cluster=True,
         do_xcom_push=True,
-        node_selector={"kubernetes.io/hostname": "node1"},
     )
 
     consumer_pods = KubernetesPodOperator.partial(
         task_id='k8s_hello',
         name='hello-pod',
-        namespace='stefan-dev',
+        namespace=NAMESPACE,
         image='python:3.9-slim',
         cmds=['python', '-c'],
         in_cluster=True,
-        node_selector={"kubernetes.io/hostname": "node1"},
     ).expand(
         arguments=generator_pod.output.map(
             lambda x: [f'import time; print("Sleeping..."); time.sleep(20); print("Hello from {x}!")']

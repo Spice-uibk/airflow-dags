@@ -17,7 +17,7 @@ MINIO_ACCESS_KEY = "minioadmin"
 MINIO_SECRET_KEY = "minioadmin"
 MINIO_BUCKET = "cats-and-dogs"
 
-NAMESPACE = "kogler-dev"
+NAMESPACE = "default"
 
 minio_env_dict = {
     "MINIO_ENDPOINT": MINIO_ENDPOINT,
@@ -56,7 +56,6 @@ with DAG(
             get_logs=True,
             is_delete_operator_pod=True,
             image_pull_policy="IfNotPresent",
-            node_selector={"kubernetes.io/hostname": "node1"},
         )
         offset_tasks.append(offset_task)
 
@@ -83,7 +82,6 @@ with DAG(
             get_logs=True,
             is_delete_operator_pod=True,
             image_pull_policy="IfNotPresent",
-            node_selector={"kubernetes.io/hostname": "node1"},
         )
         crop_tasks.append(crop_task)
 
@@ -106,7 +104,6 @@ with DAG(
             get_logs=True,
             is_delete_operator_pod=True,
             image_pull_policy="IfNotPresent",
-            node_selector={"kubernetes.io/hostname": "node1"},
         )
         enhance_brightness_tasks.append(enhance_brightness_task)
 
@@ -129,7 +126,6 @@ with DAG(
             get_logs=True,
             image_pull_policy="IfNotPresent",
             is_delete_operator_pod=True,
-            node_selector={"kubernetes.io/hostname": "node1"},
         )
         enhance_contrast_tasks.append(enhance_contrast_task)
 
@@ -151,7 +147,6 @@ with DAG(
             get_logs=True,
             is_delete_operator_pod=True,
             image_pull_policy="IfNotPresent",
-            node_selector={"kubernetes.io/hostname": "node1"},
         )
         rotate_tasks.append(rotate_task)
 
@@ -173,7 +168,6 @@ with DAG(
             get_logs=True,
             is_delete_operator_pod=True,
             image_pull_policy="IfNotPresent",
-            node_selector={"kubernetes.io/hostname": "node1"},
         )
         grayscale_tasks.append(grayscale_task)
 
@@ -181,7 +175,7 @@ with DAG(
         task_id="classification_inference_task_training",
         name="classification-inference-task-training",
         namespace=NAMESPACE,
-        image="kogsi/image_classification:classification-train-tf1",
+        image="kogsi/image_classification:classification-train-tf2",
         arguments=[
             "--train_data_path", "training/grayscaled",
             "--output_artifact_path", "models/",
@@ -203,7 +197,6 @@ with DAG(
         is_delete_operator_pod=True,
         image_pull_policy="IfNotPresent",
         startup_timeout_seconds=600,  # increase time for startup (large image)
-        node_selector={"kubernetes.io/hostname": "node1"},
     )
 
     for i in range(NUM_PARALLEL_TASKS):

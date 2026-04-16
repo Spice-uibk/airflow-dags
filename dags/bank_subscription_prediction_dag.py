@@ -17,7 +17,7 @@ MINIO_BUCKET = "bank-subscription-prediction-data"
 MINIO_SECURE = "false"
 DATA_PATH = "https://archive.ics.uci.edu/ml/machine-learning-databases/00222/bank-additional.zip"
 
-NAMESPACE = "kogler-dev"
+NAMESPACE = "default"
 
 # Base environment variables
 minio_env_dict = {
@@ -46,10 +46,9 @@ with DAG(
         env_vars=minio_env_dict, 
         get_logs=True,
         is_delete_operator_pod=True,
-        image_pull_policy="Always",
+        image_pull_policy="IfNotPresent",
         do_xcom_push=True,
         reattach_on_restart=True,
-        node_selector={"kubernetes.io/hostname": "node1"}, 
     )
 
     cleaning_task = KubernetesPodOperator(
@@ -64,10 +63,9 @@ with DAG(
         },
         get_logs=True,
         is_delete_operator_pod=True,
-        image_pull_policy="Always",
+        image_pull_policy="IfNotPresent",
         do_xcom_push=True,
         reattach_on_restart=True,
-        node_selector={"kubernetes.io/hostname": "node1"}, 
     )
 
     preprocessing_task = KubernetesPodOperator(
@@ -82,10 +80,9 @@ with DAG(
         },
         get_logs=True,
         is_delete_operator_pod=True,
-        image_pull_policy="Always",
+        image_pull_policy="IfNotPresent",
         do_xcom_push=True,
         reattach_on_restart=True,
-        node_selector={"kubernetes.io/hostname": "node1"}, 
     )
 
     splitting_task = KubernetesPodOperator(
@@ -100,10 +97,9 @@ with DAG(
         },
         get_logs=True,
         is_delete_operator_pod=True,
-        image_pull_policy="Always",
+        image_pull_policy="IfNotPresent",
         do_xcom_push=True,
         reattach_on_restart=True,
-        node_selector={"kubernetes.io/hostname": "node1"}, 
     )
 
     training_task = KubernetesPodOperator(
@@ -119,10 +115,9 @@ with DAG(
         },
         get_logs=True,
         is_delete_operator_pod=True,
-        image_pull_policy="Always",
+        image_pull_policy="IfNotPresent",
         do_xcom_push=True,
         reattach_on_restart=True,
-        node_selector={"kubernetes.io/hostname": "node1"}, 
     )
 
     evaluation_task = KubernetesPodOperator(
@@ -140,10 +135,9 @@ with DAG(
         },
         get_logs=True,
         is_delete_operator_pod=True,
-        image_pull_policy="Always",
+        image_pull_policy="IfNotPresent",
         do_xcom_push=False,
         reattach_on_restart=True,
-        node_selector={"kubernetes.io/hostname": "node1"}, 
     )
 
     loading_task >> cleaning_task >> preprocessing_task >> splitting_task >> training_task >> evaluation_task

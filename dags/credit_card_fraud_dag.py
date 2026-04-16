@@ -18,7 +18,7 @@ MINIO_SECRET_KEY = "minioadmin"
 MINIO_BUCKET = "credit-card-fraud-data"
 MINIO_SECURE = "false"  # set to true for HTTPS
 
-NAMESPACE = "kogler-dev"
+NAMESPACE = "default"
 
 # Base environment variables
 minio_env_dict = {
@@ -46,8 +46,7 @@ with DAG(
         env_vars=minio_env_dict,
         is_delete_operator_pod=True,
         get_logs=True,
-        image_pull_policy="IfNotPresent",  
-        node_selector={"kubernetes.io/hostname": "node1"}, 
+        image_pull_policy="IfNotPresent",
     )
 
     visualization_task = KubernetesPodOperator(
@@ -59,8 +58,7 @@ with DAG(
         env_vars=minio_env_dict,
         is_delete_operator_pod=True,
         get_logs=True,
-        image_pull_policy="IfNotPresent", 
-        node_selector={"kubernetes.io/hostname": "node1"}, 
+        image_pull_policy="IfNotPresent",
     )
 
 
@@ -75,8 +73,7 @@ with DAG(
             env_vars=minio_env_dict,
             is_delete_operator_pod=True,
             get_logs=True,
-            image_pull_policy="IfNotPresent", 
-            node_selector={"kubernetes.io/hostname": "node1"},  
+            image_pull_policy="IfNotPresent",
         )
 
         training_tasks.append(training_task)
@@ -93,8 +90,7 @@ with DAG(
             env_vars=minio_env_dict,
             is_delete_operator_pod=True,
             get_logs=True,
-            image_pull_policy="IfNotPresent", 
-            node_selector={"kubernetes.io/hostname": "node1"}, 
+            image_pull_policy="IfNotPresent",
         )
 
         evaluation_tasks.append(evaluation_task)
@@ -111,7 +107,6 @@ with DAG(
         get_logs=True,
         image_pull_policy="IfNotPresent",  
         do_xcom_push=True,
-        node_selector={"kubernetes.io/hostname": "node1"}, 
     )
 
     export_model_task = KubernetesPodOperator(
@@ -122,8 +117,7 @@ with DAG(
         env_vars=minio_env_dict,
         is_delete_operator_pod=True,
         get_logs=True,
-        image_pull_policy="IfNotPresent",  
-        node_selector={"kubernetes.io/hostname": "node1"}, 
+        image_pull_policy="IfNotPresent",
     )
 
     test_pkl_task = KubernetesPodOperator(
@@ -138,7 +132,6 @@ with DAG(
         is_delete_operator_pod=True,
         get_logs=True,
         image_pull_policy="IfNotPresent",
-        node_selector={"kubernetes.io/hostname": "node1"}, 
     )
 
     test_onnx_task = KubernetesPodOperator(
@@ -152,8 +145,7 @@ with DAG(
         },
         is_delete_operator_pod=True,
         get_logs=True,
-        image_pull_policy="IfNotPresent", 
-        node_selector={"kubernetes.io/hostname": "node1"}, 
+        image_pull_policy="IfNotPresent",
     )
 
 

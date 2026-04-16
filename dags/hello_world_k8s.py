@@ -25,6 +25,8 @@ default_args = {
     'retry_delay': timedelta(minutes=1),
 }
 
+NAMESPACE = "default"
+
 dag = DAG(
     'hello_world_kubernetes',
     default_args=default_args,
@@ -42,38 +44,35 @@ start_task = EmptyOperator(
 k8s_hello_task = KubernetesPodOperator(
     task_id='k8s_hello',
     name='hello-pod',
-    namespace='kogler-dev',
+    namespace=NAMESPACE,
     image='python:3.9-slim',
     cmds=['python', '-c'],
     arguments=['print("Hello world from Kubernetes Pod!")'],
     in_cluster=True,  # Change to False if Airflow runs outside K8s
     dag=dag,
-    node_selector={"kubernetes.io/hostname": "node1"},
 )
 
 k8s_date_task = KubernetesPodOperator(
     task_id='k8s_date',
     name='date-pod',
-    namespace='kogler-dev',
+    namespace=NAMESPACE,
     image='python:3.9-slim',
     cmds=['python', '-c'],
     arguments=['import datetime; print(f"Current date and time: {datetime.datetime.now()}")'],
     in_cluster=True,
     dag=dag,
-    node_selector={"kubernetes.io/hostname": "node1"},
 )
 
 k8s_sleep_task = KubernetesPodOperator(
     task_id='k8s_sleep',
     name='sleep-pod',
-    namespace='kogler-dev',
+    namespace=NAMESPACE,
     image='python:3.9-slim',
     cmds=['python', '-c'],
     container_resources=resources,
     arguments=['import time; time.sleep(120); print("Done sleeping!")'],
     in_cluster=True,
     dag=dag,
-    node_selector={"kubernetes.io/hostname": "node1"},
 )
 
 end_task = EmptyOperator(

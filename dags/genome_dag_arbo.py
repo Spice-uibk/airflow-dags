@@ -33,7 +33,7 @@ MINIO_BUCKET = "genome-data"
 KEY_INPUT_INDIVIDUAL = f"ALL.chr22.{TOTAL_ITEMS}.vcf.gz"
 KEY_INPUT_SIFTING = "ALL.chr22.phase3_shapeit2_mvncall_integrated_v5.20130502.sites.annotation.vcf.gz"
 
-NAMESPACE = "kogler-dev"
+NAMESPACE = "default"
 
 minio_env_vars = [
     k8s.V1EnvVar(name="MINIO_ENDPOINT", value=MINIO_ENDPOINT),
@@ -53,8 +53,8 @@ with DAG(
 ) as dag:
 
     # NOTE: currently decreases number of populations for cluster reasons
-    # populations = ["EUR", "AFR", "EAS", "ALL", "GBR", "SAS", "AMR"]
-    populations = ["AFR", "ALL"]
+    populations = ["EUR", "AFR", "EAS", "ALL", "GBR", "SAS", "AMR"]
+    # populations = ["AFR", "ALL"]
 
 
     # =================================
@@ -279,7 +279,7 @@ with DAG(
             cmds=["python3", "individual.py"],
             env_vars=minio_env_vars,
             is_delete_operator_pod=True,
-            node_selector={"kubernetes.io/hostname": "node1"},
+            image_pull_policy="IfNotPresent",
         ).expand(
             arguments=extract_pod_args(ind_plan)
         )
@@ -297,7 +297,7 @@ with DAG(
             ],
             env_vars=minio_env_vars,
             is_delete_operator_pod=True,
-            node_selector={"kubernetes.io/hostname": "node1"},
+            image_pull_policy="IfNotPresent",
         )
 
         feedback = report_feedback(ind_plan, "genome_individual", "individual_tasks.workers", True)
@@ -317,9 +317,9 @@ with DAG(
             namespace=NAMESPACE,
             image="kogsi/genome_dag:frequency_par2",
             cmds=["python3", "frequency_par2.py"],
+            image_pull_policy="IfNotPresent",
             env_vars=minio_env_vars,
             is_delete_operator_pod=True,
-            node_selector={"kubernetes.io/hostname": "node1"},
         ).expand(
             arguments=get_w_args(plan_data)
         )
@@ -332,7 +332,7 @@ with DAG(
             cmds=["python3", "frequency_par2.py"],
             env_vars=minio_env_vars,
             is_delete_operator_pod=True,
-            node_selector={"kubernetes.io/hostname": "node1"},
+            image_pull_policy="IfNotPresent",
         ).expand(
             arguments=get_m_args(plan_data)
         )
@@ -366,26 +366,23 @@ with DAG(
         node_selector={"kubernetes.io/hostname": "node1"},
     )
 
-    # currently skips mutations_overlap tasks for cluster reasons
+    mutations_data = mutations_overlap_data(populations)
+    mutations_tasks = KubernetesPodOperator.partial(
+        task_id="mutations_overlap",
+        name="mutations-overlap",
+        namespace=NAMESPACE,
+        image="kogsi/genome_dag:mutations-overlap",
+        cmds=["python3", "mutations-overlap.py"],
+        env_vars=minio_env_vars,
+        get_logs=True,
+        is_delete_operator_pod=True,
+        image_pull_policy="IfNotPresent",
+    ).expand(
+        arguments=mutations_data
+    )
 
-    # mutations_data = mutations_overlap_data(populations)
-    # mutations_tasks = KubernetesPodOperator.partial(
-    #     task_id="mutations_overlap",
-    #     name="mutations-overlap",
-    #     namespace=NAMESPACE,
-    #     image="kogsi/genome_dag:mutations-overlap",
-    #     cmds=["python3", "mutations-overlap.py"],
-    #     env_vars=minio_env_vars,
-    #     get_logs=True,
-    #     is_delete_operator_pod=True,
-    #     image_pull_policy="IfNotPresent",
-    #     node_selector={"kubernetes.io/hostname": "node1"},
-    # ).expand(
-    #     arguments=mutations_data
-    # )
-
-    # individual_group >> mutations_tasks
-    # sifting_task >> mutations_tasks
+    individual_group >> mutations_tasks
+    sifting_task >> mutations_tasks
 
     for pop in populations:
         with TaskGroup(group_id=f"freq_{pop}") as frequency_group:
