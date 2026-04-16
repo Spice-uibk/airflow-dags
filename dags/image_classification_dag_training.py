@@ -17,7 +17,7 @@ MINIO_ACCESS_KEY = "minioadmin"
 MINIO_SECRET_KEY = "minioadmin"
 MINIO_BUCKET = "image-classification-data"
 
-NAMESPACE = "default"
+NAMESPACE = "kogler-dev"
 
 minio_env_dict = {
     "MINIO_ENDPOINT": MINIO_ENDPOINT,
@@ -178,33 +178,46 @@ with DAG(
         )
         grayscale_tasks.append(grayscale_task)
 
-    classification_inference_task = KubernetesPodOperator(
-        task_id="classification_inference_task_training",
-        name="classification-inference-task-training",
+    # classification_inference_task = KubernetesPodOperator(
+    #     task_id="classification_inference_task_training",
+    #     name="classification-inference-task-training",
+    #     namespace=NAMESPACE,
+    #     image="kogsi/image_classification:classification-train-tf1",
+    #     arguments=[
+    #         "--train_data_path", "training/grayscaled",
+    #         "--output_artifact_path", "models/",
+    #         "--bucket_name", MINIO_BUCKET,
+    #         "--validation_split", "0.2",
+    #         # "--validation_data_path", "training/validation",
+    #         "--epochs", "5",
+    #         "--batch_size", "32",
+    #         "--early_stop_patience", "5",
+    #         "--dropout_rate", "0.2",
+    #         "--image_size", "256 256",
+    #         "--num_layers", "3",
+    #         "--filters_per_layer", "64 64 64",
+    #         "--kernel_sizes", "3 3 3",
+    #         "--workers", "4",
+    #     ],
+    #     env_vars=minio_env_dict,
+    #     get_logs=True,
+    #     is_delete_operator_pod=True,
+    #     image_pull_policy="Always",
+    #     startup_timeout_seconds=600,  # increase time for startup (large image)
+    #     # node_selector={"kubernetes.io/hostname": "node1"},
+    # )
+
+    sleep_task = KubernetesPodOperator(
+        task_id="sleep_10s",
+        name="sleep-task",
         namespace=NAMESPACE,
-        image="kogsi/image_classification:classification-train-tf1",
-        arguments=[
-            "--train_data_path", "training/grayscaled",
-            "--output_artifact_path", "models/",
-            "--bucket_name", MINIO_BUCKET,
-            "--validation_split", "0.2",
-            # "--validation_data_path", "training/validation",
-            "--epochs", "5",
-            "--batch_size", "32",
-            "--early_stop_patience", "5",
-            "--dropout_rate", "0.2",
-            "--image_size", "256 256",
-            "--num_layers", "3",
-            "--filters_per_layer", "64 64 64",
-            "--kernel_sizes", "3 3 3",
-            "--workers", "4",
-        ],
-        env_vars=minio_env_dict,
+        image="alpine:latest",
+        cmds=["/bin/sh", "-c"],
+        arguments=["echo 'Sleeping now...'; sleep10; echo 'Awake!'"],
         get_logs=True,
         is_delete_operator_pod=True,
-        image_pull_policy="Always",
-        startup_timeout_seconds=600,  # increase time for startup (large image)
-        # node_selector={"kubernetes.io/hostname": "node1"},
+        image_pull_policy="IfNotPresent",
+        node_selector={"kubernetes.io/hostname": "node1"},
     )
 
     for i in range(NUM_PARALLEL_TASKS):
@@ -217,4 +230,5 @@ with DAG(
                 >> grayscale_tasks[i]
         )
 
-    grayscale_tasks >> classification_inference_task
+    # grayscale_tasks >> classification_inference_task
+    grayscale_tasks >> sleep_task
