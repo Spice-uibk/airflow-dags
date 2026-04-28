@@ -1,7 +1,7 @@
 from airflow import DAG
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
+from airflow.providers.cncf.kubernetes.secret import Secret
 from datetime import datetime, timedelta
-import os
 
 default_args = {
     "owner": 'user',
@@ -11,30 +11,16 @@ default_args = {
     "retry_delay": timedelta(minutes=5),
 }
 
+shared_secrets = [
+    Secret("env", "ONEDATA_HOST", "predictor-secrets", "onedata-host"),
+    Secret("env", "ONEDATA_TOKEN", "predictor-secrets", "token-provider"),
+    Secret("env", "ONEDATA_SPACE", "predictor-secrets", "onedata-space"),
+    Secret("env", "OTLP_ENDPOINT", "predictor-secrets", "otlp-endpoint"),
+]
 
-def _required_env(name: str) -> str:
-    value = os.getenv(name)
-    if not value:
-        raise ValueError(f"Missing required environment variable: {name}")
-    return value
-
-
-# Runtime configuration is provided by the Airflow deployment.
-ONEDATA_HOST = _required_env("ONEDATA_HOST")
-ONEDATA_TOKEN = _required_env("ONEDATA_TOKEN")
-ONEDATA_SPACE = _required_env("ONEDATA_SPACE")
-OTLP_ENDPOINT = _required_env("OTLP_ENDPOINT")
-DATA_PATH = _required_env("DATA_PATH")
+loading_secret = Secret("env", "DATA_PATH", "predictor-secrets", "data-path")
 
 NAMESPACE = "default"
-
-# Base environment variables
-onedata_env_dict = {
-    "ONEDATA_HOST": ONEDATA_HOST,
-    "ONEDATA_TOKEN": ONEDATA_TOKEN,
-    "ONEDATA_SPACE": ONEDATA_SPACE,
-    "OTLP_ENDPOINT": OTLP_ENDPOINT,
-}
 
 with DAG(
     dag_id="bank_subscription_prediction",
@@ -49,9 +35,9 @@ with DAG(
         name="loading",
         namespace=NAMESPACE,
         image="leichtabgelenkt/bank_subscription_prediction:loading",
-        cmds=["python3", "loading.py"],
-        arguments=["--data_path", DATA_PATH],
-        env_vars=onedata_env_dict, 
+        cmds=["/bin/sh", "-c"],
+        arguments=['python3 loading.py --data_path "$DATA_PATH"'],
+        secrets=shared_secrets + [loading_secret],
         get_logs=True,
         is_delete_operator_pod=True,
         image_pull_policy="Always",
@@ -66,8 +52,8 @@ with DAG(
         namespace=NAMESPACE,
         image="leichtabgelenkt/bank_subscription_prediction:cleaning",
         cmds=["python3", "cleaning.py"],
+        secrets=shared_secrets,
         env_vars={
-            **onedata_env_dict,
             "LOADING_XCOM": "{{ ti.xcom_pull(task_ids='loading') }}"
         },
         get_logs=True,
@@ -84,8 +70,8 @@ with DAG(
         namespace=NAMESPACE,
         image="leichtabgelenkt/bank_subscription_prediction:preprocessing",
         cmds=["python3", "preprocessing.py"],
+        secrets=shared_secrets,
         env_vars={
-            **onedata_env_dict,
             "CLEANING_XCOM": "{{ ti.xcom_pull(task_ids='cleaning') }}"
         },
         get_logs=True,
@@ -102,8 +88,8 @@ with DAG(
         namespace=NAMESPACE,
         image="leichtabgelenkt/bank_subscription_prediction:splitting",
         cmds=["python3", "splitting.py"],
+        secrets=shared_secrets,
         env_vars={
-            **onedata_env_dict,
             "PREPROCESSING_XCOM": "{{ ti.xcom_pull(task_ids='preprocessing') }}"
         },
         get_logs=True,
@@ -120,8 +106,8 @@ with DAG(
         namespace=NAMESPACE,
         image="leichtabgelenkt/bank_subscription_prediction:training",
         cmds=["python3", "training.py"],
+        secrets=shared_secrets,
         env_vars={
-            **onedata_env_dict,
             "X_TRAIN": "{{ ti.xcom_pull(task_ids='splitting')['X_train'] }}",
             "Y_TRAIN": "{{ ti.xcom_pull(task_ids='splitting')['y_train'] }}"
         },
@@ -139,8 +125,8 @@ with DAG(
         namespace=NAMESPACE,
         image="leichtabgelenkt/bank_subscription_prediction:evaluation",
         cmds=["python3", "evaluation.py"],
+        secrets=shared_secrets,
         env_vars={
-            **onedata_env_dict,
             "MODEL": "{{ ti.xcom_pull(task_ids='training')['model'] }}",
             "FEATURE_SELECTOR": "{{ ti.xcom_pull(task_ids='training')['feature_selector'] }}",
             "X_TEST": "{{ ti.xcom_pull(task_ids='splitting')['X_test'] }}",
