@@ -1,6 +1,7 @@
 from airflow import DAG
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
 from datetime import datetime, timedelta
+import os
 
 default_args = {
     "owner": 'user',
@@ -10,12 +11,20 @@ default_args = {
     "retry_delay": timedelta(minutes=5),
 }
 
-# Onedata configuration
-ONEDATA_HOST = "https://data.spice-platform.eu"
-ONEDATA_TOKEN = "MDAyNGxvY2F00aW9uIGRhdGEuc3BpY2UtcGxhdGZvcm00uZXUKMDA2YmlkZW500aWZpZXIgMi9ubWQvdXNyLTVhZWEzZThiNTgwMDYzZDRhOWExOWY3NWFjMzViMWYzY2g5NzJlL2FjdC82YzU00YTc3ZTRjMjA3NTJkNzYwOTFiNWNlNGU00MzZmYWNoNTc3OAowMDE5Y2lkIGludGVyZmFjZSA9IHJlc3QKMDAxOGNpZCBzZXJ2aWNlID00gb3B3LSoKMDAyZnNpZ25hdHVyZSD9xyoau4ixjkpymKgfEXCok3QvWlqsxElGKjVRxVf32wo"
-ONEDATA_SPACE = "LucasSpace"
-DATA_PATH = "https://archive.ics.uci.edu/ml/machine-learning-databases/00222/bank-additional.zip"
-OTLP_ENDPOINT = "http://monitoring-prometheus-server.default.svc.cluster.local/api/v1/otlp/v1/metrics"
+
+def _required_env(name: str) -> str:
+    value = os.getenv(name)
+    if not value:
+        raise ValueError(f"Missing required environment variable: {name}")
+    return value
+
+
+# Runtime configuration is provided by the Airflow deployment.
+ONEDATA_HOST = _required_env("ONEDATA_HOST")
+ONEDATA_TOKEN = _required_env("ONEDATA_TOKEN")
+ONEDATA_SPACE = _required_env("ONEDATA_SPACE")
+OTLP_ENDPOINT = _required_env("OTLP_ENDPOINT")
+DATA_PATH = _required_env("DATA_PATH")
 
 NAMESPACE = "default"
 
